@@ -31,7 +31,6 @@
 #include <xcb/xcb_image.h>
 #include <QFontDatabase>
 #include <QApplication>
-#include "File.h"
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
 #include <X11/extensions/Xrender.h>
@@ -648,7 +647,7 @@ QImage CFcEngine::drawPreview(const QString &name, quint32 style, int faceNo, co
     QImage img;
 
     if(!name.isEmpty() &&
-         ((name==itsName && style==itsStyle && File::equalIndex(faceNo, itsIndex)) ||
+         ((name==itsName && style==itsStyle && faceNo <= 1 && itsIndex <= 1) ||
           parse(name, style, faceNo)) )
     {
         static const int constOffset=2;
@@ -849,7 +848,7 @@ QImage CFcEngine::draw(const QString &name, quint32 style, int faceNo, const QCo
         chars->clear();
 
     if(!name.isEmpty() &&
-         ((name==itsName && style==itsStyle && File::equalIndex(faceNo, itsIndex)) ||
+         ((name==itsName && style==itsStyle && faceNo <= 1 && itsIndex <= 1) ||
           parse(name, style, faceNo)) )
     {
         //
