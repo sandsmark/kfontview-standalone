@@ -206,7 +206,7 @@ class CFcEngine::Xft
     bool drawAllGlyphs(XftFont *xftFont, int fontHeight, int &x, int &y, int w, int h,
                        bool oneLine=false, int max=-1, QRect *used= nullptr) const;
     bool drawAllChars(XftFont *xftFont, int fontHeight, int &x, int &y, int w, int h,
-                      bool oneLine=false, int max=-1, QRect *used= nullptr) const;
+                      bool oneLine, int max, QList<TChar> *charsDrawn, QRect *used) const;
     QImage toImage(int w, int h) const;
 
     private:
@@ -467,19 +467,17 @@ bool CFcEngine::Xft::drawAllGlyphs(XftFont *xftFont, int fontHeight, int &x, int
             rv=true;
             y+=fontHeight;
             for(int i=1; i<face->num_glyphs && y<h; ++i)
-                if(drawGlyph(xftFont, i, x, y, w, h, fontHeight, oneLine, r))
-                {
-                    if(r.height()>0)
-                    {
-                        if(used)
-                        {
+                if(drawGlyph(xftFont, i, x, y, w, h, fontHeight, oneLine, r)) {
+                    if(r.height()>0) {
+                        if(used) {
                             if(used->isEmpty())
                                 *used=r;
                             else
                                 *used=used->united(r);
                         }
-                        if(max>0 && ++drawn>=max)
+                        if(max>0 && ++drawn>=max) {
                             break;
+                        }
                     }
                 }
                 else
@@ -495,7 +493,7 @@ bool CFcEngine::Xft::drawAllGlyphs(XftFont *xftFont, int fontHeight, int &x, int
 }
 
 bool CFcEngine::Xft::drawAllChars(XftFont *xftFont, int fontHeight, int &x, int &y, int w, int h,
-                                  bool oneLine, int max, QRect *used) const
+                                  bool oneLine, int max, QList<TChar> *charsDrawn, QRect *used) const
 {
     bool rv(false);
 
@@ -539,6 +537,9 @@ bool CFcEngine::Xft::drawAllChars(XftFont *xftFont, int fontHeight, int &x, int 
                                     *used=r;
                                 else
                                     *used=used->united(r);
+                            }
+                            if (charsDrawn) {
+                                charsDrawn->append(TChar(r, i));
                             }
                             if(max>0 && ++drawn>=max)
                                 break;
@@ -927,7 +928,7 @@ QImage CFcEngine::draw(const QString &name, quint32 style, int faceNo, const QCo
                             ? valid.length()!=text.length()
                             : valid.length()<(text.length()/2))
                             xft()->drawAllChars(xftFont, fSize, x, y, imgWidth, imgHeight, true,
-                                                itsScalable ? 2 : -1, itsScalable ? &used : nullptr);
+                                                itsScalable ? 2 : -1, chars, itsScalable ? &used : nullptr);
                         else
                         {
                             QVector<uint> ucs4(valid.toUcs4());
@@ -1003,7 +1004,7 @@ QImage CFcEngine::draw(const QString &name, quint32 style, int faceNo, const QCo
                                 rv=true;
                                 if(drawGlyphs)
                                     xft()->drawAllChars(xftFont, fontHeight, x, y, w, h,
-                                                         itsSizes.count()>1);
+                                                         itsSizes.count()>1, -1, chars, nullptr);
                                 else
                                     xft()->drawString(xftFont, previewString, x, y, h);
                                 closeFont(xftFont);
