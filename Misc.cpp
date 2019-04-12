@@ -22,7 +22,6 @@
  */
 
 #include "Misc.h"
-#include "config-paths.h"
 #include <QSet>
 #include <QMap>
 #include <QVector>
@@ -34,8 +33,10 @@
 #include <QProcess>
 #include <QTemporaryFile>
 #include <QStandardPaths>
+#include <QUrlQuery>
 #include <unistd.h>
 #include <ctype.h>
+#include <qplatformdefs.h>
 
 namespace KFI
 {
@@ -475,18 +476,18 @@ QString modifyName(const QString &fname)
             : rv.left(dotPos+1)+rv.mid(dotPos+1).toLower();
 }
 
-QString app(const QString &name, const char *path)
-{
-    static QMap<QString, QString> apps;
-    
-    if(!apps.contains(name)) {
-        QStringList installPaths;
-        if (qstrcmp(path, "libexec") == 0)
-            installPaths.append(KFONTINST_LIBEXEC_DIR);
-        apps[name] = QStandardPaths::findExecutable(name, installPaths);
-    }
-    return apps[name];
-}
+//QString app(const QString &name, const char *path)
+//{
+//    static QMap<QString, QString> apps;
+//    
+//    if(!apps.contains(name)) {
+//        QStringList installPaths;
+//        if (qstrcmp(path, "libexec") == 0)
+//            installPaths.append(KFONTINST_LIBEXEC_DIR);
+//        apps[name] = QStandardPaths::findExecutable(name, installPaths);
+//    }
+//    return apps[name];
+//}
 
 } // Misc::
 

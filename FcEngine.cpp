@@ -27,13 +27,11 @@
 #include <QFile>
 #include <QTextStream>
 #include <QX11Info>
-#include <KConfig>
 #include <math.h>
 #include <xcb/xcb_image.h>
 #include <QFontDatabase>
 #include <QApplication>
 #include "File.h"
-#include <KConfigGroup>
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
 #include <X11/extensions/Xrender.h>
@@ -643,16 +641,6 @@ CFcEngine::~CFcEngine()
     // Clear any fonts that may have been added...
     FcConfigAppFontClear(FcConfigGetCurrent());
     delete itsXft;
-}
-
-void CFcEngine::readConfig(KConfig &cfg)
-{
-    cfg.group(KFI_PREVIEW_GROUP).readEntry(KFI_PREVIEW_STRING_KEY, getDefaultPreviewString());
-}
-
-void CFcEngine::writeConfig(KConfig &cfg)
-{
-    cfg.group(KFI_PREVIEW_GROUP).writeEntry(KFI_PREVIEW_STRING_KEY, itsPreviewString);
 }
 
 QImage CFcEngine::drawPreview(const QString &name, quint32 style, int faceNo, const QColor &txt, const QColor &bgnd, int h)

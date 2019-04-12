@@ -574,5 +574,3 @@ void BrowserExtension::print()
 }
 
 }
-
-#include "FontViewPart.moc"

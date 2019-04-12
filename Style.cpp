@@ -152,38 +152,3 @@ QString Style::toXml(bool disabled, const QString &family, QTextStream &s) const
 }
 
 }
-
-QDBusArgument & operator<<(QDBusArgument &argument, const KFI::Style &obj)
-{
-    argument.beginStructure();
-
-    argument << obj.value() << obj.scalable() << obj.writingSystems();
-    argument.beginArray(qMetaTypeId<KFI::File>());
-    KFI::FileCont::ConstIterator it(obj.files().begin()),
-                                 end(obj.files().end());
-    for(; it!=end; ++it)
-        argument << *it;
-    argument.endArray();
-    argument.endStructure();
-    return argument;
-}
-
-const QDBusArgument & operator>>(const QDBusArgument &argument, KFI::Style &obj)
-{
-    quint32    value;
-    bool       scalable;
-    qulonglong ws;
-    argument.beginStructure();
-    argument >> value >> scalable >> ws;
-    obj=KFI::Style(value, scalable, ws);
-    argument.beginArray();
-    while(!argument.atEnd())
-    {
-        KFI::File f;
-        argument >> f;
-        obj.add(f);
-    }
-    argument.endArray();
-    argument.endStructure();
-    return argument;
-}

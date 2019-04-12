@@ -45,7 +45,7 @@ class CFontPreview : public QWidget
 
     public:
 
-    CFontPreview(QWidget *parent);
+    CFontPreview(QWidget *parent = nullptr);
     ~CFontPreview() override;
 
     void        paintEvent(QPaintEvent *) override;

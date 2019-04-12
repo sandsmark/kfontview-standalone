@@ -72,22 +72,3 @@ QString File::toXml(bool disabled, QTextStream &s) const
 
 }
 
-QDBusArgument & operator<<(QDBusArgument &argument, const KFI::File &obj)
-{
-    argument.beginStructure();
-    argument << obj.path() << obj.foundry() << obj.index();
-    argument.endStructure();
-    return argument;
-}
-
-const QDBusArgument & operator>>(const QDBusArgument &argument, KFI::File &obj)
-{
-    QString path,
-            foundry;
-    int     index;
-    argument.beginStructure();
-    argument >> path >> foundry >> index;
-    obj=KFI::File(path, foundry, index);
-    argument.endStructure();
-    return argument;
-}

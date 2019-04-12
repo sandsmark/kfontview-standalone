@@ -26,7 +26,6 @@
 
 #include <QSet>
 #include <QMetaType>
-#include <QDBusArgument>
 #include "kfontinst_export.h"
 #include "Style.h"
 
@@ -79,10 +78,5 @@ inline Q_DECL_EXPORT uint qHash(const Family &key)
 Q_DECLARE_METATYPE(KFI::Family)
 Q_DECLARE_METATYPE(KFI::Families)
 Q_DECLARE_METATYPE(QList<KFI::Families>)
-
-Q_DECL_EXPORT QDBusArgument & operator<<(QDBusArgument &argument, const KFI::Family &obj);
-Q_DECL_EXPORT const QDBusArgument & operator>>(const QDBusArgument &argument, KFI::Family &obj);
-Q_DECL_EXPORT QDBusArgument & operator<<(QDBusArgument &argument, const KFI::Families &obj);
-Q_DECL_EXPORT const QDBusArgument & operator>>(const QDBusArgument &argument, KFI::Families &obj);
 
 #endif

@@ -36,8 +36,6 @@
 //Enable the following to use locale aware family name - if font supports this.
 //#define KFI_USE_TRANSLATED_FAMILY_NAME
 
-class KConfig;
-
 typedef struct _XftFont  XftFont;
 typedef struct _XftDraw  XftDraw;
 typedef struct _XftColor XftColor;
@@ -73,8 +71,6 @@ class Q_DECL_EXPORT CFcEngine
     CFcEngine(bool init=true);
     virtual ~CFcEngine();
 
-    void                  readConfig(KConfig &cfg);
-    void                  writeConfig(KConfig &cfg);
     static void           setDirty() { theirFcDirty=true; }
     QImage                drawPreview(const QString &name, quint32 style, int faceNo, const QColor &txt, const QColor &bgnd,
                                       int h);

@@ -24,6 +24,7 @@
 #include "Fc.h"
 #include <QTextStream>
 #include <QHash>
+#include <QUrlQuery>
 
 //
 // KDE font chooser always seems to use Italic - for both Oblique, and Italic. So I guess
@@ -49,13 +50,17 @@ namespace FC
 QUrl encode(const QString &name, quint32 style, const QString &file, int index)
 {
     QUrl url(QUrl::fromLocalFile(name));
+    QUrlQuery query(url);
 
     url.setScheme(FC_PROTOCOL);
-    url.addQueryItem(FC_STYLE_QUERY, QString::number(style));
-    if(!file.isEmpty())
-        url.addQueryItem(FC_FILE_QUERY, file);
-    if(index>0)
-        url.addQueryItem(FC_INDEX_QUERY, QString::number(index));
+    query.addQueryItem(FC_STYLE_QUERY, QString::number(style));
+    if (!file.isEmpty()) {
+        query.addQueryItem(FC_FILE_QUERY, file);
+    }
+    if (index>0) {
+        query.addQueryItem(FC_INDEX_QUERY, QString::number(index));
+    }
+    url.setQuery(query);
     return url;
 }
 
