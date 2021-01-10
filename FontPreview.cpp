@@ -123,10 +123,11 @@ void CFontPreview::paintEvent(QPaintEvent *)
 
         if (abs(width() - itsLastWidth) > constStepSize || abs(height() - itsLastHeight) > constStepSize) {
             showFont();
-        } else
+        } else {
             paint.drawImage(QPointF(constBorder, constBorder), itsImage,
                             QRectF(0, 0, (width() - (constBorder * 2)) * itsImage.devicePixelRatioF(),
                                    (height() - (constBorder * 2)) * itsImage.devicePixelRatioF()));
+        }
     }
 }
 
@@ -135,8 +136,8 @@ void CFontPreview::mouseMoveEvent(QMouseEvent *event)
     if (!itsChars.isEmpty()) {
         QList<CFcEngine::TChar>::ConstIterator end(itsChars.end());
 
-        if (itsLastChar.isNull() || !itsLastChar.contains(event->pos()))
-            for (QList<CFcEngine::TChar>::ConstIterator it(itsChars.begin()); it != end; ++it)
+        if (itsLastChar.isNull() || !itsLastChar.contains(event->pos())) {
+            for (QList<CFcEngine::TChar>::ConstIterator it(itsChars.begin()); it != end; ++it) {
                 if ((*it).contains(event->pos())) {
                     if (!itsTip) {
                         itsTip = new CCharTip(this);
@@ -146,6 +147,8 @@ void CFontPreview::mouseMoveEvent(QMouseEvent *event)
                     itsLastChar = *it;
                     break;
                 }
+            }
+        }
     }
 }
 

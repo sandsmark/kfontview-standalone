@@ -209,7 +209,7 @@ void getAssociatedFiles(const QString &path, QStringList &files, bool afmAndPfm)
             }
         }
 
-        if (afmAndPfm || !gotAfm)
+        if (afmAndPfm || !gotAfm) {
             for (e = 0; pfm[e]; ++e) {
                 QString statFile(changeExt(path, pfm[e]));
 
@@ -218,6 +218,7 @@ void getAssociatedFiles(const QString &path, QStringList &files, bool afmAndPfm)
                     break;
                 }
             }
+        }
     }
 }
 
@@ -249,10 +250,11 @@ QString getFolder(const QString &defaultDir, const QString &root, QStringList &d
                     end = dirs.constEnd();
         bool found = false;
 
-        for (it = dirs.constBegin(); it != end && !found; ++it)
+        for (it = dirs.constBegin(); it != end && !found; ++it) {
             if (0 == (*it).indexOf(root)) {
                 return *it;
             }
+        }
     }
 
     return defaultDir;
@@ -415,7 +417,7 @@ QMap<QString, QString> getFontFileMap(const QSet<QString> &files)
     QMap<QString, QSet<QString>>::ConstIterator fIt(fontsFiles.constBegin()),
          fEnd(fontsFiles.constEnd());
 
-    for (; fIt != fEnd; ++fIt)
+    for (; fIt != fEnd; ++fIt) {
         if (fIt.value().count() > 1) {
             QVector<QString>             orig(fIt.value().count()),
                     modified(fIt.value().count());
@@ -433,28 +435,33 @@ QMap<QString, QString> getFontFileMap(const QSet<QString> &files)
                 if (-1 != end) {
                     QString dir = modified[0].left(end);
 
-                    for (int i = 1; i < count && good; ++i)
+                    for (int i = 1; i < count && good; ++i) {
                         if (0 != modified[i].indexOf(dir)) {
                             good = false;
                         }
+                    }
 
-                    if (good)
+                    if (good) {
                         for (int i = 0; i < count && good; ++i) {
                             modified[i].remove(0, dir.length());
                         }
+                    }
                 } else {
                     good = false;
                 }
             }
 
-            for (int i = 0; i < count; ++i)
+            for (int i = 0; i < count; ++i) {
                 map[getDir(modified[i]).mid(1) + fIt.key()] = fExists(orig[i] + fIt.key())
                         ? orig[i] + fIt.key()
                         : orig[i] + hide(fIt.key());
-        } else // Only 1 entry! :-)
+            }
+        } else { // Only 1 entry! :-)
             map[unhide(fIt.key())] = fExists((*fIt.value().begin()) + fIt.key())
                                      ? (*fIt.value().begin()) + fIt.key()
                                      : (*fIt.value().begin()) + hide(fIt.key());
+        }
+    }
 
     return map;
 }

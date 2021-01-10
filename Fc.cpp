@@ -86,9 +86,10 @@ int getIndex(const QUrl &url)
 
 int weight(int w)
 {
-    if (KFI_NULL_SETTING == w)
+    if (KFI_NULL_SETTING == w) {
 #ifdef KFI_HAVE_MEDIUM_WEIGHT
         return FC_WEIGHT_MEDIUM;
+    }
 
 #else
         return FC_WEIGHT_REGULAR;
@@ -355,7 +356,7 @@ quint32 createStyleVal(const QString &name)
 {
     int pos;
 
-    if (-1 == (pos = name.indexOf(", "))) // No style information...
+    if (-1 == (pos = name.indexOf(", "))) { // No style information...
         return createStyleVal(FC_WEIGHT_REGULAR,
 #ifdef KFI_FC_NO_WIDTHS
                               KFI_NULL_SETTING
@@ -363,7 +364,7 @@ quint32 createStyleVal(const QString &name)
                               KFI_FC_WIDTH_NORMAL
 #endif
                               , FC_SLANT_ROMAN);
-    else {
+    } else {
         QString style(name.mid(pos + 2));
 
         return createStyleVal(strToWeight(style, style),

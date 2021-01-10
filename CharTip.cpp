@@ -46,11 +46,12 @@ namespace KFI {
 
 EUnicodeCategory getCategory(quint32 ucs2)
 {
-    for (int i = 0; UNICODE_INVALID != constUnicodeCategoryList[i].category; ++i)
+    for (int i = 0; UNICODE_INVALID != constUnicodeCategoryList[i].category; ++i) {
         if (constUnicodeCategoryList[i].start <= ucs2 &&
                 constUnicodeCategoryList[i].end >= ucs2) {
             return constUnicodeCategoryList[i].category;
         }
+    }
 
     return UNICODE_UNASSIGNED;
 }
@@ -236,9 +237,10 @@ void CCharTip::showTip()
     // a character!
     if ((0x0001 <= itsItem.ucs4 && itsItem.ucs4 <= 0xD7FF) ||
             (0xE000 <= itsItem.ucs4 && itsItem.ucs4 <= 0xFFFD) ||
-            (0x10000 <= itsItem.ucs4 && itsItem.ucs4 <= 0x10FFFF))
+            (0x10000 <= itsItem.ucs4 && itsItem.ucs4 <= 0x10FFFF)) {
         details += "<tr><td align=\"right\"><b>" + i18n("XML Decimal Entity") + "&nbsp;</b></td><td>" +
                    "&#<b></b>" + QString::number(itsItem.ucs4) + ";</td></tr>";
+    }
 
     details += "</table>";
     itsLabel->setText(details);
