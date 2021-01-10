@@ -27,7 +27,7 @@
  * Copyright (C) 1998, 1999 Torben Weis <weis@kde.org>
  * Copyright (C) 2000, 2001, 2002 David Faure <faure@kde.org>
  * Copyright (C) 2004 Martin Koller <m.koller@surfeu.at>
-*/
+ */
 
 #include "CharTip.h"
 #include "FontPreview.h"
@@ -197,7 +197,7 @@ void CCharTip::showTip()
     static const int constPixSize = 96;
 
     EUnicodeCategory cat(getCategory(itsItem.ucs4));
-    QString          details("<table>");
+    QString details("<table>");
 
     details += "<tr><td align=\"right\"><b>" + i18n("Category") + "&nbsp;</b></td><td>" +
                toStr(cat) + "</td></tr>";
@@ -283,7 +283,7 @@ void CCharTip::reposition()
     rect.moveTopRight(itsParent->mapToGlobal(rect.topRight()));
 
     QPoint pos(rect.center());
-    QRect  desk(QApplication::screenAt(rect.center())->geometry());
+    QRect desk(QApplication::screenAt(rect.center())->geometry());
 
     if ((rect.center().x() + width()) > desk.right()) {
         if (pos.x() - width() < 0) {

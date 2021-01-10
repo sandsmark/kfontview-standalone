@@ -53,7 +53,7 @@
 #define KFI_SYS_USER                 "root"
 
 #define KFI_AUTHINF_USER             I18N_NOOP("Administrator")
-#define KFI_UI_CFG_FILE              KFI_NAME"uirc"
+#define KFI_UI_CFG_FILE              KFI_NAME "uirc"
 #define KFI_ROOT_CFG_DIR             "/etc/fonts/"
 #define KFI_DEFAULT_SYS_FONTS_FOLDER "/usr/local/share/fonts/"
 

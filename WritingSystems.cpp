@@ -94,7 +94,7 @@ inline qulonglong toBit(QFontDatabase::WritingSystem ws)
 // charset. The lists below contain the systems where we need to do this.
 static const struct {
     QFontDatabase::WritingSystem ws;
-    ushort                       ch;
+    ushort ch;
 } sampleCharForWritingSystem[] = {
     { QFontDatabase::Telugu, 0xc15 },
     { QFontDatabase::Kannada, 0xc95 },
@@ -153,7 +153,7 @@ QStringList WritingSystems::getLangs(qulonglong ws) const
 {
     QMap<QString, qulonglong>::ConstIterator wit(itsMap.begin()),
          wend(itsMap.end());
-    QStringList                              systems;
+    QStringList systems;
 
     for (; wit != wend; ++wit)
         if (ws & wit.value()) {

@@ -40,7 +40,7 @@
 #define KFI_PREVIEW_STRING_KEY "String"
 
 namespace KFI {
-bool      CFcEngine::theirFcDirty(true);
+bool CFcEngine::theirFcDirty(true);
 const int CFcEngine::constScalableSizes[] = {8, 10, 12, 24, 36, 48, 64, 72, 96, 0 };
 const int CFcEngine::constDefaultAlphaSize = 24;
 
@@ -156,7 +156,9 @@ class CFcEngine::Xft
 public:
 
     struct Pix {
-        Pix() : currentW(0), currentH(0), allocatedW(0), allocatedH(0) { }
+        Pix() : currentW(0), currentH(0), allocatedW(0), allocatedH(0)
+        {
+        }
 
         static int getSize(int s)
         {
@@ -196,10 +198,10 @@ public:
             }
         }
 
-        int    currentW,
-               currentH,
-               allocatedW,
-               allocatedH;
+        int currentW,
+            currentH,
+            allocatedW,
+            allocatedH;
         Pixmap x11;
     };
 
@@ -226,7 +228,7 @@ private:
     XftDraw  *itsDraw;
     XftColor itsTxtColor,
              itsBgndColor;
-    Pix      itsPix;
+    Pix itsPix;
     QImage::Format imageFormat;
 };
 
@@ -262,7 +264,7 @@ bool CFcEngine::Xft::init(const QColor &txt, const QColor &bnd, int w, int h)
     if (0x0000 == itsTxtColor.color.alpha) {
         XRenderColor xrenderCol;
         Visual       *visual = DefaultVisual(QX11Info::display(), 0);
-        Colormap     colorMap = DefaultColormap(QX11Info::display(), 0);
+        Colormap colorMap = DefaultColormap(QX11Info::display(), 0);
 
         xrenderCol.red = bnd.red() << 8;
         xrenderCol.green = bnd.green() << 8;
@@ -418,7 +420,7 @@ bool CFcEngine::Xft::drawChar32(XftFont *xftFont, quint32 ch, int &x, int &y, in
 
 bool CFcEngine::Xft::drawString(XftFont *xftFont, const QString &text, int x, int &y, int h) const
 {
-    XGlyphInfo     extents;
+    XGlyphInfo extents;
     const FcChar16 *str = (FcChar16 *)(text.utf16());
 
     XftTextExtents16(QX11Info::display(), xftFont, str, text.length(), &extents);
@@ -437,7 +439,7 @@ bool CFcEngine::Xft::drawString(XftFont *xftFont, const QString &text, int x, in
 
 void CFcEngine::Xft::drawString(const QString &text, int x, int &y, int h) const
 {
-    QFont   qt(QFontDatabase::systemFont(QFontDatabase::GeneralFont));
+    QFont qt(QFontDatabase::systemFont(QFontDatabase::GeneralFont));
     XftFont *xftFont = XftFontOpen(QX11Info::display(), 0,
                                    FC_FAMILY, FcTypeString, (const FcChar8 *)(qt.family().toUtf8().data()),
                                    FC_WEIGHT, FcTypeInteger, qt.bold() ? FC_WEIGHT_BOLD : FC_WEIGHT_REGULAR,
@@ -492,8 +494,8 @@ bool CFcEngine::Xft::drawAllGlyphs(XftFont *xftFont, int fontHeight, int &x, int
         FT_Face face = XftLockFace(xftFont);
 
         if (face) {
-            int   space(fontHeight / 10),
-                  drawn(0);
+            int space(fontHeight / 10),
+                drawn(0);
             QRect r;
 
             if (!space) {
@@ -542,8 +544,8 @@ bool CFcEngine::Xft::drawAllChars(XftFont *xftFont, int fontHeight, int &x, int 
         FT_Face face = XftLockFace(xftFont);
 
         if (face) {
-            int   space(fontHeight / 10),
-                  drawn(0);
+            int space(fontHeight / 10),
+                drawn(0);
             QRect r;
 
             if (!space) {
@@ -646,7 +648,7 @@ static QString usableStr(XftFont *font, QString &str)
 {
     unsigned int slen = str.length(),
                  ch;
-    QString      newStr;
+    QString newStr;
 
     for (ch = 0; ch < slen; ++ch)
         if (FcCharSetHasChar(font->charset, str[ch].unicode())) {
@@ -710,8 +712,8 @@ QImage CFcEngine::drawPreview(const QString &name, quint32 style, int faceNo, co
         if (!itsSizes.isEmpty()) {
             //
             // Calculate size of text...
-            int  fSize = ((int)(h * 0.75)) - 2,
-                 origHeight(0);
+            int fSize = ((int)(h * 0.75)) - 2,
+                origHeight(0);
             bool needAlpha(bgnd.alpha() < 255);
 
             if (!itsScalable) { // Then need to get nearest size...
@@ -736,11 +738,11 @@ QImage CFcEngine::drawPreview(const QString &name, quint32 style, int faceNo, co
 
                 if (xftFont) {
                     bool rv = false;
-                    int  usedWidth = 0;
+                    int usedWidth = 0;
 
                     if (hasStr(xftFont, text) || hasStr(xftFont, text = text.toUpper()) ||
                             hasStr(xftFont, text = text.toLower())) {
-                        XGlyphInfo     extents;
+                        XGlyphInfo extents;
                         const FcChar16 *str = (FcChar16 *)(text.utf16());
 
                         XftTextExtents16(QX11Info::display(), xftFont, str, text.length(),
@@ -751,8 +753,8 @@ QImage CFcEngine::drawPreview(const QString &name, quint32 style, int faceNo, co
                         rv = xft()->drawString(xftFont, text, constOffset, y, h);
                         usedWidth = extents.width;
                     } else {
-                        int   x = constOffset,
-                              y = constOffset;
+                        int x = constOffset,
+                            y = constOffset;
                         QRect used;
 
                         rv = xft()->drawAllGlyphs(xftFont, fSize, x, y, constInitialWidth, h, true, text.length(), &used);
@@ -823,7 +825,7 @@ QImage CFcEngine::draw(const QString &name, quint32 style, int faceNo, const QCo
             XftFont *xftFont = getFont(fSize);
 
             if (xftFont) {
-                XGlyphInfo     extents;
+                XGlyphInfo extents;
                 const FcChar16 *str = (FcChar16 *)(text.utf16());
 
                 XftTextExtents16(QX11Info::display(), xftFont, str, text.length(),
@@ -839,19 +841,19 @@ QImage CFcEngine::draw(const QString &name, quint32 style, int faceNo, const QCo
 
                     if (hasStr(xftFont, text) || hasStr(xftFont, text = text.toUpper()) ||
                             hasStr(xftFont, text = text.toLower())) {
-                        XGlyphInfo     extents;
+                        XGlyphInfo extents;
                         const FcChar16 *str = (FcChar16 *)(text.utf16());
 
                         XftTextExtents16(QX11Info::display(), xftFont, str, text.length(),
                                          &extents);
 
-                        int   x = 0,
-                              y = 0;
+                        int x = 0,
+                            y = 0;
 
                         rv = xft()->drawString(xftFont, text, x, y, h);
                     } else {
-                        int   x = 0,
-                              y = 0;
+                        int x = 0,
+                            y = 0;
                         QRect used;
 
                         rv = xft()->drawAllGlyphs(xftFont, h, x, y, w, h, true, text.length(), &used);
@@ -885,7 +887,7 @@ QImage CFcEngine::draw(const QString &name, quint32 style, int faceNo, const QCo
     const qreal dpr = qApp->devicePixelRatio();
     w = w * dpr;
     h = h * dpr;
-    bool   rv = false;
+    bool rv = false;
 
     if (chars) {
         chars->clear();
@@ -907,15 +909,15 @@ QImage CFcEngine::draw(const QString &name, quint32 style, int faceNo, const QCo
         getSizes();
 
         if (!itsSizes.isEmpty()) {
-            int  imgWidth(thumb && itsScalable ? w * 4 : w),
-                 imgHeight(thumb && itsScalable ? h * 4 : h);
+            int imgWidth(thumb && itsScalable ? w * 4 : w),
+                imgHeight(thumb && itsScalable ? h * 4 : h);
             bool needAlpha(bgnd.alpha() < 255);
 
             if (xft()->init(needAlpha ? Qt::black : txt, needAlpha ? Qt::white : bgnd, imgWidth, imgHeight)) {
                 XftFont *xftFont = nullptr;
-                int     line1Pos(0),
-                        line2Pos(0);
-                QRect   used(0, 0, 0, 0);
+                int line1Pos(0),
+                    line2Pos(0);
+                QRect used(0, 0, 0, 0);
 
                 if (thumb) {
                     QString text(itsScalable
@@ -967,7 +969,7 @@ QImage CFcEngine::draw(const QString &name, quint32 style, int faceNo, const QCo
                                                 itsScalable ? 2 : -1, chars, itsScalable ? &used : nullptr);
                         else {
                             QVector<uint> ucs4(valid.toUcs4());
-                            QRect         r;
+                            QRect r;
 
                             for (int ch = 0; ch < ucs4.size(); ++ch) // Display char by char so wraps...
                                 if (xft()->drawChar32(xftFont, ucs4[ch], x, y, imgWidth, imgHeight, fSize, r)) {
@@ -1004,7 +1006,7 @@ QImage CFcEngine::draw(const QString &name, quint32 style, int faceNo, const QCo
                             y -= 8;
                         } else {
                             QString validPunc(usableStr(xftFont, punctuation));
-                            bool    punc(validPunc.length() >= (punctuation.length() / 2));
+                            bool punc(validPunc.length() >= (punctuation.length() / 2));
 
                             if (lc) {
                                 xft()->drawString(xftFont, lowercase, x, y, h);
@@ -1080,8 +1082,8 @@ QImage CFcEngine::draw(const QString &name, quint32 style, int faceNo, const QCo
                         drawName(x, y, h);
                         y += alphaSize();
 
-                        bool  stop = false;
-                        int   fontHeight = xftFont->ascent + xftFont->descent, xOrig(x), yOrig(y);
+                        bool stop = false;
+                        int fontHeight = xftFont->ascent + xftFont->descent, xOrig(x), yOrig(y);
                         QRect r;
 
                         for (it = range.begin(); it != end && !stop; ++it)
@@ -1163,9 +1165,9 @@ QString CFcEngine::getPunctuation()
 // Try to get the 'string' that matches the users KDE locale..
 QString CFcEngine::getFcLangString(FcPattern *pat, const char *val, const char *valLang)
 {
-    QString                    rv;
-    QStringList                kdeLangs = KLocale::global()->languageList(),
-                               fontLangs;
+    QString rv;
+    QStringList kdeLangs = KLocale::global()->languageList(),
+                fontLangs;
     QStringList::ConstIterator it(kdeLangs.begin()),
                 end(kdeLangs.end());
 
@@ -1231,7 +1233,7 @@ bool CFcEngine::parse(const QString &name, quint32 style, int face)
     itsInstalled = !isFileName(name, style);
 
     if (!itsInstalled) {
-        int       count;
+        int count;
         FcPattern *pat = FcFreeTypeQuery((const FcChar8 *)(QFile::encodeName(itsName).data()),
                                          face < 1 ? 0 : face, nullptr, &count);
 
@@ -1340,10 +1342,10 @@ XftFont *CFcEngine::getFont(int size)
 
 bool CFcEngine::isCorrect(XftFont *f, bool checkFamily)
 {
-    int     iv,
-            weight,
-            width,
-            slant;
+    int iv,
+        weight,
+        width,
+        slant;
     FcChar8 *str;
 
     if (itsInstalled) {
@@ -1351,7 +1353,7 @@ bool CFcEngine::isCorrect(XftFont *f, bool checkFamily)
     }
 
 #ifdef KFI_FC_DEBUG
-    QString     xxx;
+    QString xxx;
     QTextStream s(&xxx);
 
     if (f) {
@@ -1431,7 +1433,7 @@ void CFcEngine::getSizes()
     qDebug();
 #endif
     XftFont *f = queryFont();
-    int     alphaSize(itsSizes.size() > itsAlphaSizeIndex && itsAlphaSizeIndex >= 0 ? itsSizes[itsAlphaSizeIndex] : constDefaultAlphaSize);
+    int alphaSize(itsSizes.size() > itsAlphaSizeIndex && itsAlphaSizeIndex >= 0 ? itsSizes[itsAlphaSizeIndex] : constDefaultAlphaSize);
 
     itsScalable = FcTrue;
 
@@ -1448,9 +1450,9 @@ void CFcEngine::getSizes()
             if (!itsScalable) {
                 FcPattern   *pat = nullptr;
                 FcObjectSet *os  = FcObjectSetBuild(FC_PIXEL_SIZE, (void *)nullptr);
-                int         weight,
-                            width,
-                            slant;
+                int weight,
+                    width,
+                    slant;
 
                 FC::decomposeStyleVal(itsStyle, weight, width, slant);
 

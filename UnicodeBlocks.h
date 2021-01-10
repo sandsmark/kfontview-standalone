@@ -10,8 +10,8 @@
 #include <KLocalizedString>
 
 struct TUnicodeBlock {
-    quint32    start,
-               end;
+    quint32 start,
+            end;
     const char *blockName;
 };
 

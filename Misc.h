@@ -46,7 +46,9 @@ enum EConstants {
 };
 
 struct TFont {
-    TFont(const QString &f = QString(), quint32 s = KFI_NO_STYLE_INFO) : family(f), styleInfo(s) { }
+    TFont(const QString &f = QString(), quint32 s = KFI_NO_STYLE_INFO) : family(f), styleInfo(s)
+    {
+    }
 
     bool operator==(const TFont &o) const
     {

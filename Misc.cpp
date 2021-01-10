@@ -160,7 +160,7 @@ bool doCmd(const QString &cmd, const QString &p1, const QString &p2, const QStri
 QString changeExt(const QString &f, const QString &newExt)
 {
     QString newStr(f);
-    int     dotPos(newStr.lastIndexOf('.'));
+    int dotPos(newStr.lastIndexOf('.'));
 
     if (-1 == dotPos) {
         newStr += QChar('.') + newExt;
@@ -182,12 +182,12 @@ QString changeExt(const QString &f, const QString &newExt)
 void getAssociatedFiles(const QString &path, QStringList &files, bool afmAndPfm)
 {
     QString ext(path);
-    int     dotPos(ext.lastIndexOf('.'));
-    bool    check(false);
+    int dotPos(ext.lastIndexOf('.'));
+    bool check(false);
 
     if (-1 == dotPos) { // Hmm, no extension - check anyway...
         check = true;
-    } else {       // Cool, got an extension - see if it is a Type1 font...
+    } else {   // Cool, got an extension - see if it is a Type1 font...
         ext = ext.mid(dotPos + 1);
         check = 0 == ext.compare("pfa", Qt::CaseInsensitive) ||
                 0 == ext.compare("pfb", Qt::CaseInsensitive);
@@ -196,8 +196,8 @@ void getAssociatedFiles(const QString &path, QStringList &files, bool afmAndPfm)
     if (check) {
         const char *afm[] = {"afm", "AFM", "Afm", nullptr},
                             *pfm[] = {"pfm", "PFM", "Pfm", nullptr};
-        bool       gotAfm(false);
-        int        e;
+        bool gotAfm(false);
+        int e;
 
         for (e = 0; afm[e]; ++e) {
             QString statFile(changeExt(path, afm[e]));
@@ -232,7 +232,7 @@ time_t getTimeStamp(const QString &item)
 bool check(const QString &path, bool file, bool checkW)
 {
     QT_STATBUF info;
-    QByteArray      pathC(QFile::encodeName(path));
+    QByteArray pathC(QFile::encodeName(path));
 
     return 0 == QT_LSTAT(pathC, &info) &&
            (file ? (S_ISREG(info.st_mode) || S_ISLNK(info.st_mode))
@@ -247,7 +247,7 @@ QString getFolder(const QString &defaultDir, const QString &root, QStringList &d
     } else {
         QStringList::const_iterator it,
                     end = dirs.constEnd();
-        bool                  found = false;
+        bool found = false;
 
         for (it = dirs.constBegin(); it != end && !found; ++it)
             if (0 == (*it).indexOf(root)) {
@@ -281,7 +281,7 @@ int getIntQueryVal(const QUrl &url, const char *key, int defVal)
 {
     QUrlQuery query(url);
     QString item(query.queryItemValue(key));
-    int     val(defVal);
+    int val(defVal);
 
     if (!item.isNull()) {
         val = item.toInt();
@@ -303,9 +303,9 @@ uint qHash(const KFI::Misc::TFont &key)
 {
     //return qHash(QString(key.family+'%'+QString().setNum(key.styleInfo, 16)));
     const QChar *p = key.family.unicode();
-    int         n = key.family.size();
-    uint        h = 0,
-                g;
+    int n = key.family.size();
+    uint h = 0,
+         g;
 
     h = (h << 4) + key.styleInfo;
 
@@ -336,8 +336,8 @@ QString encodeText(const QString &str, QTextStream &s)
     Q_ASSERT(codec);
 
     QString retval(str);
-    int     len = retval.length(),
-            i = 0;
+    int len = retval.length(),
+        i = 0;
 
     while (i < len) {
         const QChar ati(retval.at(i));
@@ -404,8 +404,8 @@ QString expandHome(QString path)
 QMap<QString, QString> getFontFileMap(const QSet<QString> &files)
 {
     QMap<QString, QString>        map;
-    QSet<QString>::ConstIterator  it = files.constBegin(),
-                                  end = files.constEnd();
+    QSet<QString>::ConstIterator it = files.constBegin(),
+                                 end = files.constEnd();
     QMap<QString, QSet<QString>> fontsFiles;
 
     for (; it != end; ++it) {
@@ -420,10 +420,10 @@ QMap<QString, QString> getFontFileMap(const QSet<QString> &files)
             QVector<QString>             orig(fIt.value().count()),
                     modified(fIt.value().count());
             QSet<QString>::ConstIterator oIt(fIt.value().constBegin());
-            bool                         good = true;
-            int                          count = fIt.value().count();
+            bool good = true;
+            int count = fIt.value().count();
 
-            for (int i = 0;  i < count && good; ++i, ++oIt) {
+            for (int i = 0; i < count && good; ++i, ++oIt) {
                 orig[i] = modified[i] = *oIt;
             }
 
@@ -433,13 +433,13 @@ QMap<QString, QString> getFontFileMap(const QSet<QString> &files)
                 if (-1 != end) {
                     QString dir = modified[0].left(end);
 
-                    for (int i = 1;  i < count && good; ++i)
+                    for (int i = 1; i < count && good; ++i)
                         if (0 != modified[i].indexOf(dir)) {
                             good = false;
                         }
 
                     if (good)
-                        for (int i = 0;  i < count && good; ++i) {
+                        for (int i = 0; i < count && good; ++i) {
                             modified[i].remove(0, dir.length());
                         }
                 } else {
@@ -447,7 +447,7 @@ QMap<QString, QString> getFontFileMap(const QSet<QString> &files)
                 }
             }
 
-            for (int i = 0;  i < count; ++i)
+            for (int i = 0; i < count; ++i)
                 map[getDir(modified[i]).mid(1) + fIt.key()] = fExists(orig[i] + fIt.key())
                         ? orig[i] + fIt.key()
                         : orig[i] + hide(fIt.key());

@@ -36,8 +36,8 @@
 //Enable the following to use locale aware family name - if font supports this.
 //#define KFI_USE_TRANSLATED_FAMILY_NAME
 
-typedef struct _XftFont  XftFont;
-typedef struct _XftDraw  XftDraw;
+typedef struct _XftFont XftFont;
+typedef struct _XftDraw XftDraw;
 typedef struct _XftColor XftColor;
 
 namespace KFI {
@@ -49,7 +49,9 @@ public:
     class Xft;
 
     struct TRange {
-        TRange(quint32 f = 0, quint32 t = 0) : from(f), to(t) { }
+        TRange(quint32 f = 0, quint32 t = 0) : from(f), to(t)
+        {
+        }
         bool null() const
         {
             return 0 == from && 0 == to;
@@ -61,7 +63,9 @@ public:
 
     struct TChar : public QRect {
         TChar(const QRect &r = QRect(), quint32 u = 0)
-            : QRect(r), ucs4(u) { }
+            : QRect(r), ucs4(u)
+        {
+        }
 
         quint32 ucs4;
     };
@@ -135,8 +139,8 @@ public:
     static QString        getLowercaseLetters();
     static QString        getPunctuation();
 
-    static const int      constScalableSizes[];
-    static const int      constDefaultAlphaSize;
+    static const int constScalableSizes[];
+    static const int constDefaultAlphaSize;
 
 private:
 
@@ -152,18 +156,18 @@ private:
 
 private:
 
-    bool          itsInstalled;
-    QString       itsName,
-                  itsDescriptiveName;
-    quint32       itsStyle;
-    int           itsIndex,
-                  itsIndexCount,
-                  itsAlphaSizeIndex;
+    bool itsInstalled;
+    QString itsName,
+            itsDescriptiveName;
+    quint32 itsStyle;
+    int itsIndex,
+        itsIndexCount,
+        itsAlphaSizeIndex;
     QVector<int>  itsSizes;
-    FcBool        itsScalable;
-    QStringList   itsAddedFiles;
-    QString       itsPreviewString;
-    static bool   theirFcDirty;
+    FcBool itsScalable;
+    QStringList itsAddedFiles;
+    QString itsPreviewString;
+    static bool theirFcDirty;
     Xft           *itsXft;
 };
 

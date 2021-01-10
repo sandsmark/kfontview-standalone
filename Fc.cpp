@@ -418,7 +418,7 @@ QString getFcString(FcPattern *pat, const char *val, int index)
 // ...so if possible, use that. Else, use the first non "xx" lang.
 QString getFcLangString(FcPattern *pat, const char *val, const char *valLang)
 {
-    int     langIndex = -1;
+    int langIndex = -1;
 
     for (int i = 0; true; ++i) {
         QString lang = getFcString(pat, valLang, i);
@@ -448,10 +448,10 @@ int getFcInt(FcPattern *pat, const char *val, int index, int def)
 
 QString getName(const QString &file)
 {
-    int       count = 0;
+    int count = 0;
     FcPattern *pat = FcFreeTypeQuery((const FcChar8 *)(QFile::encodeName(file).constData()), 0, nullptr,
                                      &count);
-    QString   name(i18n("Unknown"));
+    QString name(i18n("Unknown"));
 
     if (pat) {
         name = FC::createName(pat);
@@ -487,7 +487,7 @@ QString createName(FcPattern *pat)
     QString family,
             foundry;
     quint32 styleVal;
-    int     index;
+    int index;
 
     getDetails(pat, family, styleVal, index, foundry);
     return createName(family, styleVal);

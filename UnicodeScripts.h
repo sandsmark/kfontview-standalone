@@ -168,7 +168,7 @@ static const char *const constUnicodeScriptList[] = {
 struct TUnicodeScript {
     quint32 start,
             end;
-    int     scriptIndex;   /* index into constUnicodeScriptList */
+    int scriptIndex;   /* index into constUnicodeScriptList */
 };
 
 static const TUnicodeScript constUnicodeScripts[] = {

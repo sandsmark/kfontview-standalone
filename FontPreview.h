@@ -53,7 +53,7 @@ public:
     QSize       sizeHint() const override;
     QSize       minimumSizeHint() const override;
 
-    void        showFont(const QString &name, // Thsi is either family name, or filename
+    void        showFont(const QString &name,     // Thsi is either family name, or filename
                          unsigned long styleInfo = KFI_NO_STYLE_INFO, int face = 0);
     void        showFont();
     void        showFace(int face);
@@ -78,15 +78,15 @@ Q_SIGNALS:
 
 private:
 
-    QImage                   itsImage;
-    int                      itsCurrentFace,
-                             itsLastWidth,
-                             itsLastHeight,
-                             itsStyleInfo;
-    QString                  itsFontName;
+    QImage itsImage;
+    int itsCurrentFace,
+        itsLastWidth,
+        itsLastHeight,
+        itsStyleInfo;
+    QString itsFontName;
     QList<CFcEngine::TRange> itsRange;
     QList<CFcEngine::TChar>  itsChars;
-    CFcEngine::TChar         itsLastChar;
+    CFcEngine::TChar itsLastChar;
     CCharTip                 *itsTip;
     CFcEngine                *itsEngine;
 
