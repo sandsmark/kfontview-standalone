@@ -7,7 +7,7 @@
 #define __UNICODE_BLOCKS_H__
 
 #include <qglobal.h>
-#include <klocalizedstring.h>
+#include <KLocalizedString>
 
 struct TUnicodeBlock
 {
