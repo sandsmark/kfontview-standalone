@@ -77,7 +77,7 @@ namespace KFI
 enum ESpecial
 {
     SPECIAL_RESCAN = 0,
-    SPECIAL_CONFIGURE
+    SPECIAL_CONFIGURE,
 };
 
 }

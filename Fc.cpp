@@ -349,12 +349,7 @@ quint32 createStyleVal(const QString &name)
 
 QString styleValToStr(quint32 style)
 {
-    QString str;
-    int     weight, width, slant;
-
-    decomposeStyleVal(style, weight, width, slant);
-    str.sprintf("0X%02X%02X%02X\n", weight, width, slant);
-    return str;
+    return QStringLiteral("0X%1\n").arg(style, 6, 16, QLatin1Char('0')).toUpper();
 }
 
 void decomposeStyleVal(quint32 styleInfo, int &weight, int &width, int &slant)
@@ -394,7 +389,6 @@ QString getFcString(FcPattern *pat, const char *val, int index)
 // ...so if possible, use that. Else, use the first non "xx" lang.
 QString getFcLangString(FcPattern *pat, const char *val, const char *valLang)
 {
-    QString rv;
     int     langIndex=-1;
 
     for(int i=0; true; ++i)
