@@ -9,6 +9,7 @@ int main(int argc, char *argv[])
         qDebug() << "need a font";
         return 1;
     }
+
     if (!QFile::exists(argv[1])) {
         qWarning() << argv[1] << "does not exist";
         return 1;
@@ -18,9 +19,11 @@ int main(int argc, char *argv[])
 
     KFI::CFontPreview preview;
     preview.showFont(argv[1]);
+
     if (argc > 2) {
         preview.engine()->setPreviewString(QString::fromLocal8Bit(argv[2]));
     }
+
     preview.show();
 
     app.exec();

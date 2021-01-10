@@ -9,15 +9,13 @@
 #include <qglobal.h>
 #include <KLocalizedString>
 
-struct TUnicodeBlock
-{
+struct TUnicodeBlock {
     quint32    start,
                end;
     const char *blockName;
 };
 
-static const struct TUnicodeBlock constUnicodeBlocks[] =
-{
+static const struct TUnicodeBlock constUnicodeBlocks[] = {
     { 0x0000, 0x007F, I18N_NOOP("Basic Latin") },
     { 0x0080, 0x00FF, I18N_NOOP("Latin-1 Supplement") },
     { 0x0100, 0x017F, I18N_NOOP("Latin Extended-A") },

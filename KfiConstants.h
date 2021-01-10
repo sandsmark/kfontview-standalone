@@ -70,12 +70,10 @@
 
 #define KFI_NULL_SETTING             0xFF
 
-namespace KFI
-{
+namespace KFI {
 
 // KIO::special
-enum ESpecial
-{
+enum ESpecial {
     SPECIAL_RESCAN = 0,
     SPECIAL_CONFIGURE,
 };

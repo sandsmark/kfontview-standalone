@@ -28,14 +28,13 @@
 #include <QStringList>
 #include "kfontinst_export.h"
 
-namespace KFI
-{
+namespace KFI {
 
 class KFONTINST_EXPORT WritingSystems
 {
-    public:
+public:
 
-    static WritingSystems * instance();
+    static WritingSystems *instance();
 
     WritingSystems();
 
@@ -43,7 +42,7 @@ class KFONTINST_EXPORT WritingSystems
     qulonglong  get(const QStringList &langs) const;
     QStringList getLangs(qulonglong ws) const;
 
-    private:
+private:
 
     QMap<QString, qulonglong> itsMap;
 };

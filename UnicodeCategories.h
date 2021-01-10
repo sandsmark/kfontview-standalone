@@ -8,8 +8,7 @@
 
 #include <QtGlobal>
 
-enum EUnicodeCategory
-{
+enum EUnicodeCategory {
     UNICODE_UPPERCASE_LETTER,
     UNICODE_LOWERCASE_LETTER,
     UNICODE_TITLECASE_LETTER,
@@ -44,15 +43,13 @@ enum EUnicodeCategory
     UNICODE_INVALID,
 };
 
-struct TUnicodeCategory
-{
+struct TUnicodeCategory {
     quint32 start;
     quint32 end;
     EUnicodeCategory category;
 };
 
-static const TUnicodeCategory constUnicodeCategoryList[] =
-{
+static const TUnicodeCategory constUnicodeCategoryList[] = {
     { 0x0000, 0x001F, UNICODE_CONTROL },
     { 0x0020, 0x0020, UNICODE_SPACE_SEPARATOR },
     { 0x0021, 0x0023, UNICODE_OTHER_PUNCTUATION },

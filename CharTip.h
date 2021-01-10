@@ -32,8 +32,7 @@ class QTimer;
 class QResizeEvent;
 class QEvent;
 
-namespace KFI
-{
+namespace KFI {
 
 class CFontPreview;
 
@@ -41,25 +40,25 @@ class CCharTip : public QFrame
 {
     Q_OBJECT
 
-    public:
+public:
 
     CCharTip(CFontPreview *parent);
     ~CCharTip() override;
 
     void setItem(const CFcEngine::TChar &ch);
 
-    private Q_SLOTS:
+private Q_SLOTS:
 
     void showTip();
     void hideTip();
 
-    private:
+private:
 
     void reposition();
     void resizeEvent(QResizeEvent *event) override;
     bool eventFilter(QObject *, QEvent *e) override;
 
-    private:
+private:
 
     CFontPreview     *itsParent;
     QLabel           *itsLabel,

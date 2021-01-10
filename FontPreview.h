@@ -33,8 +33,7 @@
 
 class QWheelEvent;
 
-namespace KFI
-{
+namespace KFI {
 
 class CCharTip;
 class CFcEngine;
@@ -43,7 +42,7 @@ class CFontPreview : public QWidget
 {
     Q_OBJECT
 
-    public:
+public:
 
     CFontPreview(QWidget *parent = nullptr);
     ~CFontPreview() override;
@@ -55,26 +54,29 @@ class CFontPreview : public QWidget
     QSize       minimumSizeHint() const override;
 
     void        showFont(const QString &name, // Thsi is either family name, or filename
-                         unsigned long styleInfo=KFI_NO_STYLE_INFO, int face=0);
+                         unsigned long styleInfo = KFI_NO_STYLE_INFO, int face = 0);
     void        showFont();
     void        showFace(int face);
 
 
-    CFcEngine * engine() { return itsEngine; }
+    CFcEngine *engine()
+    {
+        return itsEngine;
+    }
 
-    public Q_SLOTS:
+public Q_SLOTS:
 
     void        setUnicodeRange(const QList<CFcEngine::TRange> &r);
     void        zoomIn();
     void        zoomOut();
 
-    Q_SIGNALS:
+Q_SIGNALS:
 
     void        status(bool);
     void        atMax(bool);
     void        atMin(bool);
 
-    private:
+private:
 
     QImage                   itsImage;
     int                      itsCurrentFace,

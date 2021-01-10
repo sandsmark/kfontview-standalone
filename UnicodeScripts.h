@@ -9,8 +9,7 @@
 #include <QtGlobal>
 #include <klocalizedstring.h>
 
-static const char * const constUnicodeScriptList[] =
-{
+static const char *const constUnicodeScriptList[] = {
     I18N_NOOP("Adlam"),
     I18N_NOOP("Ahom"),
     I18N_NOOP("Anatolian Hieroglyphs"),
@@ -166,15 +165,13 @@ static const char * const constUnicodeScriptList[] =
     NULL
 };
 
-struct TUnicodeScript
-{
+struct TUnicodeScript {
     quint32 start,
             end;
     int     scriptIndex;   /* index into constUnicodeScriptList */
 };
 
-static const TUnicodeScript constUnicodeScripts[] =
-{
+static const TUnicodeScript constUnicodeScripts[] = {
     { 0x0000, 0x001F, 23 },
     { 0x0020, 0x0020, 23 },
     { 0x0021, 0x0023, 23 },
