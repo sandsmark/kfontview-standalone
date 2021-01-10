@@ -18,6 +18,9 @@ int main(int argc, char *argv[])
 
     KFI::CFontPreview preview;
     preview.showFont(argv[1]);
+    if (argc > 2) {
+        preview.engine()->setPreviewString(QString::fromLocal8Bit(argv[2]));
+    }
     preview.show();
 
     app.exec();
