@@ -8,7 +8,7 @@ INCLUDEPATH += . /usr/include/freetype2
 
 CONFIG += CONFIG += sanitizer sanitize_undefined sanitize_address
 
-QT += widgets xml KI18n x11extras KWidgetsAddons
+QT += widgets KI18n x11extras
 LIBS += -lXft -lfreetype -lX11 -lfontconfig -lxcb-image
 
 # The following define makes your compiler warn you if you use any
@@ -30,7 +30,6 @@ HEADERS += CharTip.h \
            KfiConstants.h \
            kfontinst_export.h \
            Misc.h \
-           PreviewSelectAction.h \
            UnicodeBlocks.h \
            UnicodeCategories.h \
            UnicodeScripts.h \
@@ -41,5 +40,4 @@ SOURCES += main.cpp \
            FcEngine.cpp \
            FontPreview.cpp \
            Misc.cpp \
-           PreviewSelectAction.cpp \
            WritingSystems.cpp
