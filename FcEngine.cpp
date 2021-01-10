@@ -31,6 +31,8 @@
 #include <xcb/xcb_image.h>
 #include <QFontDatabase>
 #include <QApplication>
+#include <QRawFont>
+#include <QDebug>
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
 #include <X11/extensions/Xrender.h>
@@ -901,255 +903,271 @@ QImage CFcEngine::draw(const QString &name, quint32 style, int faceNo, const QCo
     if (chars) {
         chars->clear();
     }
+    if (name.isEmpty()) {
+        return img;
+    }
 
-    if (!name.isEmpty() &&
-            ((name == itsName && style == itsStyle && faceNo <= 1 && itsIndex <= 1) ||
-             parse(name, style, faceNo))) {
-        //
-        // We allow kio_thumbnail to cache our thumbs. Normal is 128x128, and large is 256x256
-        // ...if kio_thumbnail asks us for a bigger size, then it is probably the file info dialog, in
-        // which case treat it as a normal preview...
-        if (thumb && (h > 256 || w != h)) {
-            thumb = false;
-        }
-
-        int x = 0, y = 0;
-
-        getSizes();
-
-        if (!itsSizes.isEmpty()) {
-            int imgWidth(thumb && itsScalable ? w * 4 : w),
-                imgHeight(thumb && itsScalable ? h * 4 : h);
-            bool needAlpha(bgnd.alpha() < 255);
-
-            if (xft()->init(needAlpha ? Qt::black : txt, needAlpha ? Qt::white : bgnd, imgWidth, imgHeight)) {
-                XftFont *xftFont = nullptr;
-                int line1Pos(0),
-                    line2Pos(0);
-                QRect used(0, 0, 0, 0);
-
-                if (thumb) {
-                    QString text(itsScalable
-                                 ? i18nc("First letter of the alphabet (in upper then lower case)", "Aa")
-                                 : i18nc("All letters of the alphabet (in upper/lower case pairs), followed by numbers",
-                                         "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789"));
-                    //
-                    // Calculate size of text...
-                    int fSize = h;
-
-                    if (!itsScalable) { // Then need to get nearest size...
-                        int bSize = 0;
-
-                        for (int s = 0; s < itsSizes.size(); ++s) {
-                            if (itsSizes[s] <= fSize || 0 == bSize) {
-                                bSize = itsSizes[s];
-                            }
-                        }
-
-                        fSize = bSize;
-                    }
-
-                    xftFont = getFont(fSize);
-
-                    if (xftFont) {
-                        QString valid(usableStr(xftFont, text));
-
-                        y = fSize;
-                        rv = true;
-
-                        if (itsScalable) {
-                            if (valid.length() != text.length()) {
-                                text = getPunctuation().mid(1, 2); // '1' '2'
-                                valid = usableStr(xftFont, text);
-                            }
-                        } else if (valid.length() < (text.length() / 2)) {
-                            for (int i = 0; i < 3; ++i) {
-                                text = 0 == i ? getUppercaseLetters() : 1 == i ? getLowercaseLetters() : getPunctuation();
-                                valid = usableStr(xftFont, text);
-
-                                if (valid.length() >= (text.length() / 2)) {
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (itsScalable
-                                ? valid.length() != text.length()
-                                : valid.length() < (text.length() / 2)) {
-                            xft()->drawAllChars(xftFont, fSize, x, y, imgWidth, imgHeight, true,
-                                                itsScalable ? 2 : -1, chars, itsScalable ? &used : nullptr);
-                        } else {
-                            QVector<uint> ucs4(valid.toUcs4());
-                            QRect r;
-
-                            for (int ch = 0; ch < ucs4.size(); ++ch) { // Display char by char so wraps...
-                                if (xft()->drawChar32(xftFont, ucs4[ch], x, y, imgWidth, imgHeight, fSize, r)) {
-                                    if (used.isEmpty()) {
-                                        used = r;
-                                    } else {
-                                        used = used.united(r);
-                                    }
-                                } else {
-                                    break;
-                                }
-                            }
-                        }
-
-                        closeFont(xftFont);
-                    }
-                } else if (0 == range.count()) {
-                    QString lowercase(getLowercaseLetters()),
-                            uppercase(getUppercaseLetters()),
-                            punctuation(getPunctuation());
-
-                    drawName(x, y, h);
-                    y += 4;
-                    line1Pos = y;
-                    y += 8;
-
-                    xftFont = getFont(alphaSize());
-
-                    if (xftFont) {
-                        bool lc(hasStr(xftFont, lowercase)),
-                             uc(hasStr(xftFont, uppercase)),
-                             drawGlyphs = !lc && !uc;
-
-                        if (drawGlyphs) {
-                            y -= 8;
-                        } else {
-                            QString validPunc(usableStr(xftFont, punctuation));
-                            bool punc(validPunc.length() >= (punctuation.length() / 2));
-
-                            if (lc) {
-                                xft()->drawString(xftFont, lowercase, x, y, h);
-                            }
-
-                            if (uc) {
-                                xft()->drawString(xftFont, uppercase, x, y, h);
-                            }
-
-                            if (punc) {
-                                xft()->drawString(xftFont, validPunc, x, y, h);
-                            }
-
-                            if (lc || uc || punc) {
-                                line2Pos = y + 2;
-                            }
-
-                            y += 8;
-                        }
-
-                        QString previewString(getPreviewString());
-
-                        if (!drawGlyphs) {
-                            if (!lc && uc) {
-                                previewString = previewString.toUpper();
-                            }
-
-                            if (!uc && lc) {
-                                previewString = previewString.toLower();
-                            }
-                        }
-
-                        closeFont(xftFont);
-
-                        for (int s = 0; s < itsSizes.size(); ++s) {
-                            if ((xftFont = getFont(itsSizes[s]))) {
-                                int fontHeight = xftFont->ascent + xftFont->descent;
-
-                                rv = true;
-
-                                if (drawGlyphs) {
-                                    xft()->drawAllChars(xftFont, fontHeight, x, y, w, h,
-                                                        itsSizes.count() > 1, -1, chars, nullptr);
-                                } else {
-                                    xft()->drawString(xftFont, previewString, x, y, h);
-                                }
-
-                                closeFont(xftFont);
-                            }
-                        }
-                    }
-                } else if (1 == range.count() && (range.first().null() || 0 == range.first().to)) {
-                    if (range.first().null()) {
-                        drawName(x, y, h);
-
-                        if ((xftFont = getFont(alphaSize()))) {
-                            int fontHeight = xftFont->ascent + xftFont->descent;
-
-                            xft()->drawAllGlyphs(xftFont, fontHeight, x, y, w, h, false);
-                            rv = true;
-                            closeFont(xftFont);
-                        }
-                    } else if ((xftFont = getFont(int(imgWidth * 0.85)))) {
-                        rv = xft()->drawChar32Centre(xftFont, (*(range.begin())).from,
-                                                     imgWidth, imgHeight);
-                        closeFont(xftFont);
-                    }
-                } else {
-                    QList<TRange>::ConstIterator it(range.begin()),
-                          end(range.end());
-
-                    if ((xftFont = getFont(alphaSize()))) {
-                        rv = true;
-                        drawName(x, y, h);
-                        y += alphaSize();
-
-                        bool stop = false;
-                        int fontHeight = xftFont->ascent + xftFont->descent, xOrig(x), yOrig(y);
-                        QRect r;
-
-                        for (it = range.begin(); it != end && !stop; ++it) {
-                            for (quint32 c = (*it).from; c <= (*it).to && !stop; ++c) {
-                                if (xft()->drawChar32(xftFont, c, x, y, w, h, fontHeight, r)) {
-                                    if (chars && !r.isEmpty()) {
-                                        chars->append(TChar(r, c));
-                                    }
-                                } else {
-                                    stop = true;
-                                }
-                            }
-                        }
-
-                        if (x == xOrig && y == yOrig) {
-                            // No characters found within the selected range...
-                            xft()->drawString(i18n("No characters found."), x, y, h);
-                            rv = true;
-                        }
-
-                        closeFont(xftFont);
-                    }
-                }
-
-                if (rv) {
-                    img = xft()->toImage(imgWidth, imgHeight);
-
-                    if (!img.isNull() && line1Pos) {
-                        QPainter p(&img);
-
-                        p.setPen(txt);
-                        p.drawLine(0, line1Pos, w - 1, line1Pos);
-
-                        if (line2Pos) {
-                            p.drawLine(0, line2Pos, w - 1, line2Pos);
-                        }
-                    }
-
-                    if (!img.isNull()) {
-                        if (itsScalable && !used.isEmpty() && (used.width() < imgWidth || used.height() < imgHeight)) {
-                            img = img.copy(used);
-                        }
-
-                        if (needAlpha) {
-                            setTransparentBackground(img, txt);
-                        }
-                    }
-                }
-            }
+    if (name != itsName || style != itsStyle || faceNo <= 1 || itsIndex <= 1) {
+        if (!parse(name, style, faceNo)) {
+            return img;
         }
     }
 
+    //
+    // We allow kio_thumbnail to cache our thumbs. Normal is 128x128, and large is 256x256
+    // ...if kio_thumbnail asks us for a bigger size, then it is probably the file info dialog, in
+    // which case treat it as a normal preview...
+    if (thumb && (h > 256 || w != h)) {
+        thumb = false;
+    }
+
+    int x = 0, y = 0;
+
+    getSizes();
+    if (itsSizes.isEmpty()) {
+        return img;
+    }
+
+    int imgWidth(thumb && itsScalable ? w * 4 : w);
+    int imgHeight(thumb && itsScalable ? h * 4 : h);
+    bool needAlpha(bgnd.alpha() < 255);
+
+    if (!xft()->init(needAlpha ? Qt::black : txt, needAlpha ? Qt::white : bgnd, imgWidth, imgHeight)) {
+        return img;
+    }
+
+    XftFont *xftFont = nullptr;
+    int line1Pos(0);
+    int line2Pos(0);
+
+    QRect used(0, 0, 0, 0);
+
+    if (thumb) {
+        QString text(itsScalable
+                     ? i18nc("First letter of the alphabet (in upper then lower case)", "Aa")
+                     : i18nc("All letters of the alphabet (in upper/lower case pairs), followed by numbers",
+                             "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789"));
+        //
+        // Calculate size of text...
+        int fSize = h;
+
+        if (!itsScalable) { // Then need to get nearest size...
+            int bSize = 0;
+
+            for (int s = 0; s < itsSizes.size(); ++s) {
+                if (itsSizes[s] <= fSize || 0 == bSize) {
+                    bSize = itsSizes[s];
+                }
+            }
+
+            fSize = bSize;
+        }
+
+        xftFont = getFont(fSize);
+
+        if (xftFont) {
+            QString valid(usableStr(xftFont, text));
+
+            y = fSize;
+            rv = true;
+
+            if (itsScalable) {
+                if (valid.length() != text.length()) {
+                    text = getPunctuation().mid(1, 2); // '1' '2'
+                    valid = usableStr(xftFont, text);
+                }
+            } else if (valid.length() < (text.length() / 2)) {
+                for (int i = 0; i < 3; ++i) {
+                    text = 0 == i ? getUppercaseLetters() : 1 == i ? getLowercaseLetters() : getPunctuation();
+                    valid = usableStr(xftFont, text);
+
+                    if (valid.length() >= (text.length() / 2)) {
+                        break;
+                    }
+                }
+            }
+
+            if (itsScalable
+                    ? valid.length() != text.length()
+                    : valid.length() < (text.length() / 2)) {
+                xft()->drawAllChars(xftFont, fSize, x, y, imgWidth, imgHeight, true,
+                                    itsScalable ? 2 : -1, chars, itsScalable ? &used : nullptr);
+            } else {
+                QVector<uint> ucs4(valid.toUcs4());
+                QRect r;
+
+                for (int ch = 0; ch < ucs4.size(); ++ch) { // Display char by char so wraps...
+                    if (xft()->drawChar32(xftFont, ucs4[ch], x, y, imgWidth, imgHeight, fSize, r)) {
+                        if (used.isEmpty()) {
+                            used = r;
+                        } else {
+                            used = used.united(r);
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            closeFont(xftFont);
+        }
+    } else if (range.isEmpty()) {
+        QString lowercase(getLowercaseLetters());
+        QString uppercase(getUppercaseLetters());
+        QString punctuation(getPunctuation());
+        QString writingSystemSample(getWritingSystemSample(name));
+        qDebug() << lowercase << writingSystemSample;
+
+        drawName(x, y, h);
+        y += 4;
+        line1Pos = y;
+        y += 8;
+
+        xftFont = getFont(alphaSize());
+
+        if (xftFont) {
+            bool lc(hasStr(xftFont, lowercase));
+            bool uc(hasStr(xftFont, uppercase));
+            bool drawGlyphs = !lc && !uc;
+
+            if (drawGlyphs) {
+                y -= 8;
+            } else {
+                QString validPunc(usableStr(xftFont, punctuation));
+                bool punc(validPunc.length() >= (punctuation.length() / 2));
+
+                if (lc) {
+                    xft()->drawString(xftFont, lowercase, x, y, h);
+                }
+
+                if (uc) {
+                    xft()->drawString(xftFont, uppercase, x, y, h);
+                }
+
+                if (punc) {
+                    xft()->drawString(xftFont, validPunc, x, y, h);
+                }
+                if (!writingSystemSample.isEmpty()) {
+                    xft()->drawString(xftFont, writingSystemSample, x, y, h);
+                }
+
+                if (lc || uc || punc) {
+                    line2Pos = y + 2;
+                }
+
+                y += 8;
+            }
+
+            QString previewString(getPreviewString());
+
+            if (!drawGlyphs) {
+                if (!lc && uc) {
+                    previewString = previewString.toUpper();
+                }
+
+                if (!uc && lc) {
+                    previewString = previewString.toLower();
+                }
+            }
+
+            closeFont(xftFont);
+
+            for (int s = 0; s < itsSizes.size(); ++s) {
+                if ((xftFont = getFont(itsSizes[s]))) {
+                    int fontHeight = xftFont->ascent + xftFont->descent;
+
+                    rv = true;
+
+                    if (drawGlyphs) {
+                        xft()->drawAllChars(xftFont, fontHeight, x, y, w, h,
+                                            itsSizes.count() > 1, -1, chars, nullptr);
+                    } else {
+                        xft()->drawString(xftFont, previewString, x, y, h);
+                    }
+
+                    closeFont(xftFont);
+                }
+            }
+        }
+    } else if (1 == range.count() && (range.first().null() || 0 == range.first().to)) {
+        if (range.first().null()) {
+            drawName(x, y, h);
+
+            if ((xftFont = getFont(alphaSize()))) {
+                int fontHeight = xftFont->ascent + xftFont->descent;
+
+                xft()->drawAllGlyphs(xftFont, fontHeight, x, y, w, h, false);
+                rv = true;
+                closeFont(xftFont);
+            }
+        } else if ((xftFont = getFont(int(imgWidth * 0.85)))) {
+            rv = xft()->drawChar32Centre(xftFont, (*(range.begin())).from,
+                                         imgWidth, imgHeight);
+            closeFont(xftFont);
+        }
+    } else {
+        QList<TRange>::ConstIterator it(range.begin());
+
+        if ((xftFont = getFont(alphaSize()))) {
+            rv = true;
+            drawName(x, y, h);
+            y += alphaSize();
+
+            bool stop = false;
+            int fontHeight = xftFont->ascent + xftFont->descent, xOrig(x), yOrig(y);
+            QRect r;
+
+            for (it = range.begin(); it != range.end() && !stop; ++it) {
+                for (quint32 c = (*it).from; c <= (*it).to && !stop; ++c) {
+                    if (xft()->drawChar32(xftFont, c, x, y, w, h, fontHeight, r)) {
+                        if (chars && !r.isEmpty()) {
+                            chars->append(TChar(r, c));
+                        }
+                    } else {
+                        stop = true;
+                    }
+                }
+            }
+
+            if (x == xOrig && y == yOrig) {
+                // No characters found within the selected range...
+                xft()->drawString(i18n("No characters found."), x, y, h);
+                rv = true;
+            }
+
+            closeFont(xftFont);
+        }
+    }
+
+    if (!rv) {
+        img.setDevicePixelRatio(dpr);
+        return img;
+    }
+
+    img = xft()->toImage(imgWidth, imgHeight);
+
+    if (!img.isNull() && line1Pos) {
+        QPainter p(&img);
+
+        p.setPen(txt);
+        p.drawLine(0, line1Pos, w - 1, line1Pos);
+
+        if (line2Pos) {
+            p.drawLine(0, line2Pos, w - 1, line2Pos);
+        }
+    }
+
+    if (!img.isNull()) {
+        if (itsScalable && !used.isEmpty() && (used.width() < imgWidth || used.height() < imgHeight)) {
+            img = img.copy(used);
+        }
+
+        if (needAlpha) {
+            setTransparentBackground(img, txt);
+        }
+    }
     img.setDevicePixelRatio(dpr);
+
     return img;
 }
 
@@ -1172,6 +1190,38 @@ QString CFcEngine::getLowercaseLetters()
 QString CFcEngine::getPunctuation()
 {
     return i18nc("Numbers and characters", "0123456789.:,;(*!?'/\\\")£$€%^&-+@~#<>{}[]"); //krazy:exclude=i18ncheckarg
+}
+
+QString CFcEngine::getWritingSystemSample(const QString &name)
+{
+    QFile f(name);
+    if (!f.open(QIODevice::ReadOnly)) {
+        qWarning() << "Failed to open" << name;
+        return "";
+    }
+    const QByteArray data = f.readAll();
+    if (data.isEmpty()) {
+        qWarning() << "Empty font file" << name;
+        return "";
+    }
+    QString previewString;
+    QRawFont rawFont(data, 12);
+//    QRawFont rawFont(name, 12); //lolidk
+//    if (rawFont.isValid()) {
+//        qWarning() << name << "is invalid";
+//        return "";
+//    }
+    for (const QFontDatabase::WritingSystem writingSystem : rawFont.supportedWritingSystems()) {
+        qDebug() << writingSystem;
+        for (const QChar c : QFontDatabase::writingSystemSample(writingSystem)) {
+            if (rawFont.supportsCharacter(c)) {
+                previewString += c;
+            }
+        }
+    }
+
+    return previewString;
+
 }
 
 #ifdef KFI_USE_TRANSLATED_FAMILY_NAME
