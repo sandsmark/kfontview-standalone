@@ -38,6 +38,11 @@
 #include <X11/extensions/Xrender.h>
 //#define KFI_FC_DEBUG
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
+extern FT_Library qt_getFreetype();
+
 #define KFI_PREVIEW_GROUP      "KFontInst Preview Settings"
 #define KFI_PREVIEW_STRING_KEY "String"
 
@@ -705,107 +710,6 @@ CFcEngine::~CFcEngine()
     delete itsXft;
 }
 
-QImage CFcEngine::drawPreview(const QString &name, quint32 style, int faceNo, const QColor &txt, const QColor &bgnd, int h)
-{
-    QImage img;
-
-    if (!name.isEmpty() &&
-            ((name == itsName && style == itsStyle && faceNo <= 1 && itsIndex <= 1) ||
-             parse(name, style, faceNo))) {
-        static const int constOffset = 2;
-        static const int constInitialWidth = 1536;
-
-        getSizes();
-
-        if (!itsSizes.isEmpty()) {
-            //
-            // Calculate size of text...
-            int fSize = ((int)(h * 0.75)) - 2,
-                origHeight(0);
-            bool needAlpha(bgnd.alpha() < 255);
-
-            if (!itsScalable) { // Then need to get nearest size...
-                int bSize = 0;
-
-                for (int s = 0; s < itsSizes.size(); ++s) {
-                    if (itsSizes[s] <= fSize || 0 == bSize) {
-                        bSize = itsSizes[s];
-                    }
-                }
-
-                fSize = bSize;
-
-                if (bSize > h) {
-                    origHeight = h;
-                    h = bSize + 8;
-                }
-            }
-
-            if (xft()->init(needAlpha ? Qt::black : txt, needAlpha ? Qt::white : bgnd, constInitialWidth, h)) {
-                XftFont *xftFont = getFont(fSize);
-                QString text(itsPreviewString);
-
-                if (xftFont) {
-                    bool rv = false;
-                    int usedWidth = 0;
-
-                    if (hasStr(xftFont, text) || hasStr(xftFont, text = text.toUpper()) ||
-                            hasStr(xftFont, text = text.toLower())) {
-                        XGlyphInfo extents;
-                        const FcChar16 *str = (FcChar16 *)(text.utf16());
-
-                        XftTextExtents16(QX11Info::display(), xftFont, str, text.length(),
-                                         &extents);
-
-                        int y = (h - extents.height) / 2;
-
-                        rv = xft()->drawString(xftFont, text, constOffset, y, h);
-                        usedWidth = extents.width;
-                    } else {
-                        int x = constOffset,
-                            y = constOffset;
-                        QRect used;
-
-                        rv = xft()->drawAllGlyphs(xftFont, fSize, x, y, constInitialWidth, h, true, text.length(), &used);
-
-                        if (rv) {
-                            usedWidth = used.width();
-                        }
-                    }
-
-                    if (rv) {
-                        img = xft()->toImage(constInitialWidth, h);
-
-                        if (!img.isNull()) {
-                            if (origHeight) {
-                                int width = (int)((usedWidth * (double)(((double)h) / ((double)origHeight))) + 0.5);
-                                img = img.scaledToHeight(origHeight, Qt::SmoothTransformation)
-                                      .copy(0, 0, width + (2 * constOffset) < constInitialWidth
-                                            ? width + (2 * constOffset)
-                                            : constInitialWidth,
-                                            origHeight);
-                            } else {
-                                img = img.copy(0, 0, usedWidth + (2 * constOffset) < constInitialWidth
-                                               ? usedWidth + (2 * constOffset)
-                                               : constInitialWidth,
-                                               h);
-                            }
-
-                            if (needAlpha) {
-                                setTransparentBackground(img, txt);
-                            }
-                        }
-                    }
-
-                    closeFont(xftFont);
-                }
-            }
-        }
-    }
-
-    return img;
-}
-
 QImage CFcEngine::draw(const QString &name, quint32 style, int faceNo, const QColor &txt, const QColor &bgnd, int fSize, const QString &text_)
 {
     QImage img;
@@ -1362,41 +1266,13 @@ XftFont *CFcEngine::getFont(int size)
     qDebug() << itsName << ' ' << itsStyle << ' ' << size;
 #endif
 
-    if (itsInstalled) {
-        int weight,
-            width,
-            slant;
-
-        FC::decomposeStyleVal(itsStyle, weight, width, slant);
-
-#ifndef KFI_FC_NO_WIDTHS
-
-        if (KFI_NULL_SETTING != width) {
-            f = XftFontOpen(QX11Info::display(), 0,
-                            FC_FAMILY, FcTypeString, (const FcChar8 *)(itsName.toUtf8().data()),
-                            FC_WEIGHT, FcTypeInteger, weight,
-                            FC_SLANT, FcTypeInteger, slant,
-                            FC_WIDTH, FcTypeInteger, width,
-                            FC_PIXEL_SIZE, FcTypeDouble, (double)size,
-                            NULL);
-        } else {
-#endif
-            f = XftFontOpen(QX11Info::display(), 0,
-                            FC_FAMILY, FcTypeString, (const FcChar8 *)(itsName.toUtf8().data()),
-                            FC_WEIGHT, FcTypeInteger, weight,
-                            FC_SLANT, FcTypeInteger, slant,
-                            FC_PIXEL_SIZE, FcTypeDouble, (double)size,
-                            NULL);
-        }
-    } else {
-        FcPattern *pattern = FcPatternBuild(nullptr,
-                                            FC_FILE, FcTypeString,
-                                            QFile::encodeName(itsName).constData(),
-                                            FC_INDEX, FcTypeInteger, itsIndex < 0 ? 0 : itsIndex,
-                                            FC_PIXEL_SIZE, FcTypeDouble, (double)size,
-                                            NULL);
-        f = XftFontOpenPattern(QX11Info::display(), pattern);
-    }
+    FcPattern *pattern = FcPatternBuild(nullptr,
+            FC_FILE, FcTypeString,
+            QFile::encodeName(itsName).constData(),
+            FC_INDEX, FcTypeInteger, itsIndex < 0 ? 0 : itsIndex,
+            FC_PIXEL_SIZE, FcTypeDouble, (double)size,
+            NULL);
+    f = XftFontOpenPattern(QX11Info::display(), pattern);
 
 #ifdef KFI_FC_DEBUG
     qDebug() << "ret: " << (int)f;
@@ -1504,116 +1380,25 @@ void CFcEngine::getSizes()
 
     itsAlphaSizeIndex = 0;
 
-    if (f) {
-        double px(0.0);
+    if (!f) {
+        return;
+    }
+    double px(0.0);
 
-        if (itsInstalled) {
-            if (FcResultMatch != FcPatternGetBool(f->pattern, FC_SCALABLE, 0, &itsScalable)) {
-                itsScalable = FcFalse;
-            }
-
-            if (!itsScalable) {
-                FcPattern   *pat = nullptr;
-                FcObjectSet *os  = FcObjectSetBuild(FC_PIXEL_SIZE, (void *)nullptr);
-                int weight,
-                    width,
-                    slant;
-
-                FC::decomposeStyleVal(itsStyle, weight, width, slant);
-
-#ifndef KFI_FC_NO_WIDTHS
-
-                if (KFI_NULL_SETTING != width) {
-                    pat = FcPatternBuild(nullptr,
-                                         FC_FAMILY, FcTypeString,
-                                         (const FcChar8 *)(itsName.toUtf8().data()),
-                                         FC_WEIGHT, FcTypeInteger, weight,
-                                         FC_SLANT, FcTypeInteger, slant,
-                                         FC_WIDTH, FcTypeInteger, width,
-                                         NULL);
-                } else {
-#endif
-                    pat = FcPatternBuild(nullptr,
-                                         FC_FAMILY, FcTypeString,
-                                         (const FcChar8 *)(itsName.toUtf8().data()),
-                                         FC_WEIGHT, FcTypeInteger, weight,
-                                         FC_SLANT, FcTypeInteger, slant,
-                                         NULL);
-                }
-
-                FcFontSet *set = FcFontList(nullptr, pat, os);
-
-                FcPatternDestroy(pat);
-                FcObjectSetDestroy(os);
-
-                if (set) {
-                    int size(0);
-#ifdef KFI_FC_DEBUG
-                    qDebug() << "got fixed sizes: " << set->nfont;
-#endif
-                    itsSizes.reserve(set->nfont);
-
-                    for (int i = 0; i < set->nfont; i++) {
-                        if (FcResultMatch == FcPatternGetDouble(set->fonts[i], FC_PIXEL_SIZE, 0, &px)) {
-                            itsSizes.push_back((int)px);
-
-#ifdef KFI_FC_DEBUG
-                            qDebug() << "got fixed: " << px;
-#endif
-
-                            if (px <= alphaSize) {
-                                itsAlphaSizeIndex = size;
-                            }
-
-                            size++;
-                        }
-                    }
-
-                    FcFontSetDestroy(set);
-                }
-            }
-        } else {
-            FT_Face face = XftLockFace(f);
-
-            if (face) {
-                itsIndexCount = face->num_faces;
-
-                if (!(itsScalable = FT_IS_SCALABLE(face))) {
-                    int numSizes = face->num_fixed_sizes,
-                        size;
-
-
-                    itsSizes.reserve(numSizes);
-
-#ifdef KFI_FC_DEBUG
-                    qDebug() << "numSizes fixed: " << numSizes;
-#endif
-
-                    for (size = 0; size < numSizes; size++) {
-#if (FREETYPE_MAJOR*10000+FREETYPE_MINOR*100+FREETYPE_PATCH) >= 20105
-                        double px = face->available_sizes[size].y_ppem >> 6;
-#else
-                        double px = face->available_sizes[size].width;
-#endif
-#ifdef KFI_FC_DEBUG
-                        qDebug() << "px: " << px;
-#endif
-                        itsSizes.push_back((int)px);
-
-                        if (px <= alphaSize) {
-                            itsAlphaSizeIndex = size;
-                        }
-                    }
-                }
-
-                XftUnlockFace(f);
-            }
-        }
-
+    FT_Face face = XftLockFace(f);
+    if (!face) {
         closeFont(f);
+        return;
     }
 
+    itsIndexCount = face->num_faces;
+    qDebug() << face->num_faces;
+    itsScalable = FT_IS_SCALABLE(face);
+
     if (itsScalable) {
+        XftUnlockFace(f);
+        closeFont(f);
+
         itsSizes.reserve(sizeof(constScalableSizes) / sizeof(int));
 
         for (int i = 0; constScalableSizes[i]; ++i) {
@@ -1625,7 +1410,31 @@ void CFcEngine::getSizes()
 
             itsSizes.push_back(px);
         }
+        return;
     }
+
+    int numSizes = face->num_fixed_sizes;
+    itsSizes.reserve(numSizes);
+
+#ifdef KFI_FC_DEBUG
+    qDebug() << "numSizes fixed: " << numSizes;
+#endif
+
+    for (int size = 0; size < numSizes; size++) {
+        double px = face->available_sizes[size].y_ppem >> 6;
+#ifdef KFI_FC_DEBUG
+        qDebug() << "px: " << px;
+#endif
+        itsSizes.push_back((int)px);
+
+        if (px <= alphaSize) {
+            itsAlphaSizeIndex = size;
+        }
+    }
+
+    XftUnlockFace(f);
+    closeFont(f);
+
 
 #ifdef KFI_FC_DEBUG
     qDebug() << "end";

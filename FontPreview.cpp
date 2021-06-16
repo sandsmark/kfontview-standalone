@@ -28,7 +28,15 @@
 #include <QPaintEvent>
 #include <QMouseEvent>
 #include <QWheelEvent>
+#include <QX11Info>
+#include <QDebug>
 #include <stdlib.h>
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include <fontconfig/fcfreetype.h>
+
+extern FT_Library qt_getFreetype();
 
 namespace KFI {
 
@@ -58,6 +66,65 @@ void CFontPreview::showFont(const QString &name, unsigned long styleInfo,
     itsFontName = name;
     itsStyleInfo = styleInfo;
     showFace(face);
+    getAvailableSizes(name);
+}
+
+QVector<int> CFontPreview::getAvailableSizes(const QString &filePath)
+{
+    const int constScalableSizes[] = {8, 10, 12, 24, 36, 48, 64, 72, 96, 0 };
+
+    const int id = 0;
+    FcBlanks *blanks = FcConfigGetBlanks(nullptr);
+    int faces = 0;
+
+    FcPattern *pattern = FcFreeTypeQuery((const FcChar8*)QFile::encodeName(filePath).constData(), id, blanks, &faces);
+    if (!pattern) {
+        qWarning() << "Failed to load" << filePath;
+        return {};
+    }
+    FcBool scalable = FcTrue;
+    FcResult res = FcPatternGetBool (pattern, FC_SCALABLE, 0, &scalable);
+
+    if (res != FcResultMatch) {
+        qWarning() << "Failed to query scalable";
+        scalable = FcTrue;
+    }
+    FcPatternDestroy(pattern);
+    QVector<int> sizes;
+    if (scalable) {
+        qDebug() << "Scalable";
+        sizes.reserve(sizeof(constScalableSizes) / sizeof(int));
+
+        for (int i = 0; constScalableSizes[i]; ++i) {
+            sizes.push_back((constScalableSizes[i] * QX11Info::appDpiX() + 36) / 72);
+
+            //if (px <= alphaSize) {
+            //    itsAlphaSizeIndex = i;
+            //}
+        }
+
+        return sizes;
+    }
+    FT_Library library;
+    FT_Init_FreeType(&library);
+    FT_Face face = 0;
+    FT_Error err = FT_New_Face(library, QFile::encodeName(filePath).constData(), 0, &face);
+    if (err != 0) {
+        qWarning() << "Failed to get face" << err;
+        FT_Done_FreeType(library);
+        return {};
+    }
+    qDebug() << "Fixed faces"<< face->num_fixed_sizes;
+
+    for (int i=0; i<face->num_fixed_sizes; i++) {
+        sizes.push_back(face->available_sizes[i].y_ppem >> 6);
+    }
+
+
+    FT_Done_Face(face);
+    FT_Done_FreeType(library);
+
+    return sizes;
 }
 
 void CFontPreview::showFace(int face)

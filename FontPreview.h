@@ -28,6 +28,8 @@
 #include <QSize>
 #include <QWidget>
 #include <QPaintEvent>
+#include <QTextLayout>
+#include <QRawFont>
 #include "KfiConstants.h"
 #include "FcEngine.h"
 
@@ -77,6 +79,7 @@ Q_SIGNALS:
     void        atMin(bool);
 
 private:
+    static QVector<int> getAvailableSizes(const QString &filename);
 
     QImage itsImage;
     int itsCurrentFace,
@@ -89,6 +92,11 @@ private:
     CFcEngine::TChar itsLastChar;
     CCharTip                 *itsTip;
     CFcEngine                *itsEngine;
+
+    QTextLayout m_layout;
+    QRawFont m_rawFont;
+
+    QVector<QGlyphRun> m_glyphRuns;
 
     friend class CCharTip;
 };
