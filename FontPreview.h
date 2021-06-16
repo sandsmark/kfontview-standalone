@@ -33,6 +33,10 @@
 #include "KfiConstants.h"
 #include "FcEngine.h"
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include <fontconfig/fcfreetype.h>
+
 class QWheelEvent;
 
 namespace KFI {
@@ -66,6 +70,9 @@ public:
         return itsEngine;
     }
 
+protected:
+    void resizeEvent(QResizeEvent*) { m_previewString = previewString(itsFontName); update(); }
+
 public Q_SLOTS:
 
     void        setUnicodeRange(const QList<CFcEngine::TRange> &r);
@@ -79,7 +86,9 @@ Q_SIGNALS:
     void        atMin(bool);
 
 private:
-    static QVector<int> getAvailableSizes(const QString &filename);
+    QVector<int> getAvailableSizes(const QString &filename);
+    QList<QGlyphRun> createGlyphRun(const QString &fontFile, const int size, const QString &text);
+    QString previewString(const QString &fontFile);
 
     QImage itsImage;
     int itsCurrentFace,
@@ -96,7 +105,10 @@ private:
     QTextLayout m_layout;
     QRawFont m_rawFont;
 
-    QVector<QGlyphRun> m_glyphRuns;
+    QList<QGlyphRun> m_glyphRuns;
+    QString m_previewString;
+    QString m_family;
+    FT_Library m_library;
 
     friend class CCharTip;
 };

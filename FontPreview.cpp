@@ -32,10 +32,6 @@
 #include <QDebug>
 #include <stdlib.h>
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include <fontconfig/fcfreetype.h>
-
 extern FT_Library qt_getFreetype();
 
 namespace KFI {
@@ -51,6 +47,13 @@ CFontPreview::CFontPreview(QWidget *parent)
       itsStyleInfo(KFI_NO_STYLE_INFO),
       itsTip(nullptr)
 {
+    m_library = nullptr;
+    FT_Error err = FT_Init_FreeType(&m_library);
+    if (err != 0) {
+        qWarning() << "Failed to init freetype";
+        m_library = nullptr;
+    }
+
     itsEngine = new CFcEngine;
 }
 
@@ -58,6 +61,8 @@ CFontPreview::~CFontPreview()
 {
     delete itsTip;
     delete itsEngine;
+    
+    FT_Done_FreeType(m_library);
 }
 
 void CFontPreview::showFont(const QString &name, unsigned long styleInfo,
@@ -66,9 +71,99 @@ void CFontPreview::showFont(const QString &name, unsigned long styleInfo,
     itsFontName = name;
     itsStyleInfo = styleInfo;
     showFace(face);
-    getAvailableSizes(name);
+
+    m_glyphRuns.clear();
+
+    const QVector<int> sizes = getAvailableSizes(name);
+    if (sizes.isEmpty()) {
+        qWarning() << "Failed to get sizes";
+        return;
+    }
+    m_rawFont = QRawFont(name, sizes.first());
+    if (!m_rawFont.isValid()) {
+        qWarning() << "Invalid font" << name;
+        return;
+    }
+    m_previewString = previewString(name);
+    if (m_previewString.isEmpty()) {
+        qWarning() << "failed to create preview string";
+        return;
+    }
+    for (int size :sizes) {
+        m_glyphRuns.append(createGlyphRun(name, size, m_previewString));
+    }
+    m_family = m_rawFont.familyName();
 }
 
+QString CFontPreview::previewString(const QString &fontFile)
+{
+
+    QString ret;
+    for (const QFontDatabase::WritingSystem writingSystem : m_rawFont.supportedWritingSystems()) {
+        for (const QChar c : QFontDatabase::writingSystemSample(writingSystem)) {
+            if (m_rawFont.supportsCharacter(c)) {
+                ret += c;
+            }
+        }
+    }
+    if (!ret.isEmpty()) {
+        return ret;
+    }
+
+    FT_Face face = 0;
+    FT_Error err = FT_New_Face(m_library, QFile::encodeName(fontFile).constData(), 0, &face);
+    if (err != 0) {
+        qWarning() << "Failed to get face" << err;
+        return {};
+    }
+
+    FT_ULong  charcode;
+    FT_UInt   gindex;
+    charcode = FT_Get_First_Char( face, &gindex );
+    float currWidth = constBorder * 4;
+    while ( gindex != 0 ) {
+        const QRectF boundingRect = m_rawFont.boundingRect(gindex);
+        currWidth += boundingRect.width();
+        if (currWidth > width()) {
+            break;
+        }
+        ret += QChar(uint(charcode));
+
+        charcode = FT_Get_Next_Char( face, charcode, &gindex );
+    }
+
+    FT_Done_Face(face);
+    return ret;
+}
+
+QList<QGlyphRun> CFontPreview::createGlyphRun(const QString &fontFile, const int size, const QString &text)
+{
+    QRawFont font(fontFile, size);
+    if (!font.isValid()) {
+        qWarning() << "Invalid font and size" << fontFile << size;
+        return {};
+    }
+
+    QTextLayout layout(text);
+    layout.beginLayout();
+    layout.createLine();
+    layout.endLayout();
+    layout.setRawFont(font);
+    QList<QGlyphRun> runs = layout.glyphRuns();
+    if (runs.isEmpty()) {
+        qWarning() << "No runs!";
+    }
+    if (runs.isEmpty()) {
+        qWarning() << "Failed to create run for" << text;
+        return runs;
+    }
+
+    if (runs.count() != 1) {
+        qWarning() << "too many runs" << runs.count();
+        runs = runs.mid(0, 1);
+    }
+    return runs;
+}
 QVector<int> CFontPreview::getAvailableSizes(const QString &filePath)
 {
     const int constScalableSizes[] = {8, 10, 12, 24, 36, 48, 64, 72, 96, 0 };
@@ -92,7 +187,6 @@ QVector<int> CFontPreview::getAvailableSizes(const QString &filePath)
     FcPatternDestroy(pattern);
     QVector<int> sizes;
     if (scalable) {
-        qDebug() << "Scalable";
         sizes.reserve(sizeof(constScalableSizes) / sizeof(int));
 
         for (int i = 0; constScalableSizes[i]; ++i) {
@@ -105,24 +199,21 @@ QVector<int> CFontPreview::getAvailableSizes(const QString &filePath)
 
         return sizes;
     }
-    FT_Library library;
-    FT_Init_FreeType(&library);
-    FT_Face face = 0;
-    FT_Error err = FT_New_Face(library, QFile::encodeName(filePath).constData(), 0, &face);
-    if (err != 0) {
-        qWarning() << "Failed to get face" << err;
-        FT_Done_FreeType(library);
+    if (!m_library) {
         return {};
     }
-    qDebug() << "Fixed faces"<< face->num_fixed_sizes;
+
+    FT_Face face = 0;
+    FT_Error err = FT_New_Face(m_library, QFile::encodeName(filePath).constData(), 0, &face);
+    if (err != 0) {
+        qWarning() << "Failed to get face" << err;
+        return {};
+    }
 
     for (int i=0; i<face->num_fixed_sizes; i++) {
         sizes.push_back(face->available_sizes[i].y_ppem >> 6);
     }
-
-
     FT_Done_Face(face);
-    FT_Done_FreeType(library);
 
     return sizes;
 }
@@ -185,6 +276,17 @@ void CFontPreview::paintEvent(QPaintEvent *)
     QPainter paint(this);
 
     paint.fillRect(rect(), palette().base());
+
+    {
+        paint.drawText(rect(), m_family);
+        int offset = constBorder * 2;
+        for (const QGlyphRun &run : m_glyphRuns) {
+            // QPainter wants the baseline, so update the offset first
+            offset += run.boundingRect().height() + constStepSize * 2;
+            paint.drawGlyphRun({constBorder * 2, offset}, run);
+        }
+        return;
+    }
 
     if (!itsImage.isNull()) {
 
