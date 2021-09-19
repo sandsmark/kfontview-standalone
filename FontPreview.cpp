@@ -279,7 +279,7 @@ void CFontPreview::paintEvent(QPaintEvent *)
 
     {
         paint.drawText(rect(), m_family);
-        int offset = constBorder * 2;
+        qreal offset = constBorder * 2;
         for (const QGlyphRun &run : m_glyphRuns) {
             // QPainter wants the baseline, so update the offset first
             offset += run.boundingRect().height() + constStepSize * 2;

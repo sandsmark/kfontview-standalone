@@ -71,7 +71,7 @@ public:
     }
 
 protected:
-    void resizeEvent(QResizeEvent*) { m_previewString = previewString(itsFontName); update(); }
+    void resizeEvent(QResizeEvent*) override { m_previewString = previewString(itsFontName); update(); }
 
 public Q_SLOTS:
 
