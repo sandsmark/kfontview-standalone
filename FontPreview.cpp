@@ -22,8 +22,6 @@
  */
 
 #include "FontPreview.h"
-#include "FcEngine.h"
-#include "CharTip.h"
 #include <QPainter>
 #include <QPaintEvent>
 #include <QMouseEvent>
@@ -45,8 +43,7 @@ CFontPreview::CFontPreview(QWidget *parent)
       itsCurrentFace(1),
       itsLastWidth(0),
       itsLastHeight(0),
-      itsStyleInfo(KFI_NO_STYLE_INFO),
-      itsTip(nullptr)
+      itsStyleInfo(KFI_NO_STYLE_INFO)
 {
     m_library = nullptr;
     FT_Error err = FT_Init_FreeType(&m_library);
@@ -54,15 +51,10 @@ CFontPreview::CFontPreview(QWidget *parent)
         qWarning() << "Failed to init freetype";
         m_library = nullptr;
     }
-
-    itsEngine = new CFcEngine;
 }
 
 CFontPreview::~CFontPreview()
 {
-    delete itsTip;
-    delete itsEngine;
-
     FT_Done_FreeType(m_library);
 }
 
@@ -71,7 +63,6 @@ void CFontPreview::showFont(const QString &name, unsigned long styleInfo,
 {
     itsFontName = name;
     itsStyleInfo = styleInfo;
-    showFace(face);
 
     m_glyphRuns.clear();
     m_previewRuns.clear();
@@ -247,148 +238,89 @@ QVector<int> CFontPreview::getAvailableSizes(const QString &filePath)
     return sizes;
 }
 
-void CFontPreview::showFace(int face)
-{
-    itsCurrentFace = face;
-    showFont();
-}
-
-void CFontPreview::showFont()
-{
-    itsLastWidth = width() + constStepSize;
-    itsLastHeight = height() + constStepSize;
-
-    itsImage = itsEngine->draw(itsFontName, itsStyleInfo, itsCurrentFace,
-                               palette().text().color(), palette().base().color(),
-                               itsLastWidth, itsLastHeight,
-                               false, itsRange, &itsChars);
-
-    qDebug() << "chars" << itsChars.count();
-    if (!itsImage.isNull()) {
-        itsLastChar = CFcEngine::TChar();
-        setMouseTracking(itsChars.count() > 0);
-        update();
-        emit status(true);
-        emit atMax(itsEngine->atMax());
-        emit atMin(itsEngine->atMin());
-    } else {
-        itsLastChar = CFcEngine::TChar();
-        setMouseTracking(false);
-        update();
-        emit status(false);
-        emit atMax(true);
-        emit atMin(true);
-    }
-}
-
-void CFontPreview::zoomIn()
-{
-    itsEngine->zoomIn();
-    showFont();
-    emit atMax(itsEngine->atMax());
-}
-
-void CFontPreview::zoomOut()
-{
-    itsEngine->zoomOut();
-    showFont();
-    emit atMin(itsEngine->atMin());
-}
-
-void CFontPreview::setUnicodeRange(const QList<CFcEngine::TRange> &r)
-{
-    itsRange = r;
-    showFont();
-}
-
 void CFontPreview::paintEvent(QPaintEvent *)
 {
     QPainter paint(this);
 
     paint.fillRect(rect(), palette().base());
 
-    if (1){
-        QRect textRect = rect();
-        textRect -= QMargins(constBorder, constBorder, constBorder, constBorder);
-        QRect bounds;
-        paint.drawText(textRect, 0, m_family, &bounds);
+    QRect textRect = rect();
+    textRect -= QMargins(constBorder, constBorder, constBorder, constBorder);
+    QRect bounds;
+    paint.drawText(textRect, 0, m_family, &bounds);
 
-        qreal offset = bounds.height() + constBorder;
+    qreal offset = bounds.height() + constBorder;
 
-        paint.drawLine(constBorder, offset, width() - constBorder, offset);
-        offset += constBorder;
+    paint.drawLine(constBorder, offset, width() - constBorder, offset);
+    offset += constBorder;
 
-        for (const QGlyphRun &run : m_previewRuns) {
-            // QPainter wants the baseline, so update the offset first
-            paint.drawGlyphRun({constBorder * 2, offset}, run);
-            offset += run.boundingRect().height() + constBorder;
-        }
-        offset += constBorder;
+    for (const QGlyphRun &run : m_previewRuns) {
+        // QPainter wants the baseline, so update the offset first
+        paint.drawGlyphRun({constBorder * 2, offset}, run);
+        offset += run.boundingRect().height() + constBorder;
+    }
+    offset += constBorder;
 
-        paint.drawLine(constBorder, offset, width() - constBorder, offset);
-        offset += constBorder;
+    paint.drawLine(constBorder, offset, width() - constBorder, offset);
+    offset += constBorder;
 
-        int lastHeight = 0;
-        for (const QGlyphRun &run : m_glyphRuns) {
-            lastHeight = run.boundingRect().height();
-            offset += lastHeight;
-            paint.drawGlyphRun({constBorder * 2, offset}, run);
+    int lastHeight = 0;
+    for (const QGlyphRun &run : m_glyphRuns) {
+        lastHeight = run.boundingRect().height();
+        offset += lastHeight;
+        paint.drawGlyphRun({constBorder * 2, offset}, run);
 
-        }
-
-        offset += constBorder + lastHeight/2;
-        paint.drawLine(constBorder, offset, width() - constBorder, offset);
-        offset += constBorder;
-
-        for (const QGlyphRun &run : m_foxRuns) {
-            offset += run.boundingRect().height();
-            paint.drawGlyphRun({constBorder * 2, offset}, run);
-        }
-        return;
     }
 
-    if (!itsImage.isNull()) {
+    offset += constBorder + lastHeight/2;
+    paint.drawLine(constBorder, offset, width() - constBorder, offset);
+    offset += constBorder;
 
-        if (abs(width() - itsLastWidth) > constStepSize || abs(height() - itsLastHeight) > constStepSize) {
-            showFont();
-        } else {
-            paint.drawImage(QPointF(constBorder, constBorder), itsImage,
-                            QRectF(0, 0, (width() - (constBorder * 2)) * itsImage.devicePixelRatioF(),
-                                   (height() - (constBorder * 2)) * itsImage.devicePixelRatioF()));
-        }
+    for (const QGlyphRun &run : m_foxRuns) {
+        offset += run.boundingRect().height();
+        paint.drawGlyphRun({constBorder * 2, offset}, run);
     }
+    return;
 }
 
 void CFontPreview::mouseMoveEvent(QMouseEvent *event)
 {
-    if (!itsChars.isEmpty()) {
-        QList<CFcEngine::TChar>::ConstIterator end(itsChars.end());
+    //if (!itsChars.isEmpty()) {
+    //    QList<CFcEngine::TChar>::ConstIterator end(itsChars.end());
 
-        if (itsLastChar.isNull() || !itsLastChar.contains(event->pos())) {
-            for (QList<CFcEngine::TChar>::ConstIterator it(itsChars.begin()); it != end; ++it) {
-                if ((*it).contains(event->pos())) {
-                    if (!itsTip) {
-                        itsTip = new CCharTip(this);
-                    }
+    //    if (itsLastChar.isNull() || !itsLastChar.contains(event->pos())) {
+    //        for (QList<CFcEngine::TChar>::ConstIterator it(itsChars.begin()); it != end; ++it) {
+    //            if ((*it).contains(event->pos())) {
+    //                if (!itsTip) {
+    //                    itsTip = new CCharTip(this);
+    //                }
 
-                    itsTip->setItem(*it);
-                    itsLastChar = *it;
-                    break;
-                }
-            }
-        }
-    }
+    //                itsTip->setItem(*it);
+    //                itsLastChar = *it;
+    //                break;
+    //            }
+    //        }
+    //    }
+    //}
+}
+void CFontPreview::zoomIn()
+{
+    // todo
+}
+void CFontPreview::zoomOut()
+{
+    // todo
 }
 
 void CFontPreview::wheelEvent(QWheelEvent *e)
 {
-    if (e->angleDelta().y() > 0) {
-        zoomIn();
-    } else if (e->angleDelta().y() < 0) {
-        zoomOut();
-    }
+    //if (e->angleDelta().y() > 0) {
+    //    zoomIn();
+    //} else if (e->angleDelta().y() < 0) {
+    //    zoomOut();
+    //}
 
-    e->accept();
+    //e->accept();
 }
 
 QSize CFontPreview::sizeHint() const

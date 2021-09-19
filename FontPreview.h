@@ -31,18 +31,15 @@
 #include <QTextLayout>
 #include <QRawFont>
 #include "KfiConstants.h"
-#include "FcEngine.h"
 
 #include <ft2build.h>
+#include <fontconfig/fontconfig.h>
 #include FT_FREETYPE_H
 #include <fontconfig/fcfreetype.h>
 
 class QWheelEvent;
 
 namespace KFI {
-
-class CCharTip;
-class CFcEngine;
 
 class CFontPreview : public QWidget
 {
@@ -62,20 +59,10 @@ public:
     void        showFont(const QString &name,     // Thsi is either family name, or filename
                          unsigned long styleInfo = KFI_NO_STYLE_INFO, int face = 0);
     void        showFont();
-    void        showFace(int face);
-
-
-    CFcEngine *engine()
-    {
-        return itsEngine;
-    }
-
 protected:
     void resizeEvent(QResizeEvent*) override { m_previewString = previewString(itsFontName); update(); }
 
 public Q_SLOTS:
-
-    void        setUnicodeRange(const QList<CFcEngine::TRange> &r);
     void        zoomIn();
     void        zoomOut();
 
@@ -96,11 +83,6 @@ private:
         itsLastHeight,
         itsStyleInfo;
     QString itsFontName;
-    QList<CFcEngine::TRange> itsRange;
-    QList<CFcEngine::TChar>  itsChars;
-    CFcEngine::TChar itsLastChar;
-    CCharTip                 *itsTip;
-    CFcEngine                *itsEngine;
 
     QTextLayout m_layout;
     QRawFont m_rawFont;

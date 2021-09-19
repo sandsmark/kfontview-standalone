@@ -23,21 +23,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 # Input
-HEADERS += CharTip.h \
-           Fc.h \
-           FcEngine.h \
-           FontPreview.h \
+HEADERS += FontPreview.h \
            KfiConstants.h \
-           kfontinst_export.h \
-           Misc.h \
-           UnicodeBlocks.h \
-           UnicodeCategories.h \
-           UnicodeScripts.h \
-           WritingSystems.h 
+           kfontinst_export.h
 SOURCES += main.cpp \
-           CharTip.cpp \
-           Fc.cpp \
-           FcEngine.cpp \
-           FontPreview.cpp \
-           Misc.cpp \
-           WritingSystems.cpp
+           FontPreview.cpp
