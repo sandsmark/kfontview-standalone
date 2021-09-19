@@ -105,7 +105,9 @@ private:
     QTextLayout m_layout;
     QRawFont m_rawFont;
 
+    QList<QGlyphRun> m_previewRuns;
     QList<QGlyphRun> m_glyphRuns;
+    QList<QGlyphRun> m_foxRuns;
     QString m_previewString;
     QString m_family;
     FT_Library m_library;

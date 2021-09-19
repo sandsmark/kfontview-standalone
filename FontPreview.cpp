@@ -30,6 +30,7 @@
 #include <QWheelEvent>
 #include <QX11Info>
 #include <QDebug>
+#include <QScreen>
 #include <stdlib.h>
 
 extern FT_Library qt_getFreetype();
@@ -61,7 +62,7 @@ CFontPreview::~CFontPreview()
 {
     delete itsTip;
     delete itsEngine;
-    
+
     FT_Done_FreeType(m_library);
 }
 
@@ -73,6 +74,8 @@ void CFontPreview::showFont(const QString &name, unsigned long styleInfo,
     showFace(face);
 
     m_glyphRuns.clear();
+    m_previewRuns.clear();
+    m_foxRuns.clear();
 
     const QVector<int> sizes = getAvailableSizes(name);
     if (sizes.isEmpty()) {
@@ -92,7 +95,33 @@ void CFontPreview::showFont(const QString &name, unsigned long styleInfo,
     for (int size :sizes) {
         m_glyphRuns.append(createGlyphRun(name, size, m_previewString));
     }
-    m_family = m_rawFont.familyName();
+
+    static const QString quickBrownFox =
+        i18nc("A sentence that uses all of the letters of the alphabet",
+                "The quick brown fox jumps over the lazy dog");
+    for (int size :sizes) {
+        m_foxRuns.append(createGlyphRun(name, size, quickBrownFox));
+    }
+
+    static const QStringList previewStrings = {
+        i18nc("All of the letters of the alphabet, uppercase", "ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+        i18nc("All of the letters of the alphabet, lowercase", "abcdefghijklmnopqrstuvwxyz"),
+        //i18nc("Numbers and characters", "0123456789.:,;(*!?'/\\\")£$€%^&-+@~#<>{}[]") //krazy:exclude=i18ncheckarg
+        QString::fromUtf8("0123456789.:,;(*!?'/\\\")£$€%^&-+@~#<>{}[]") //krazy:exclude=i18ncheckarg
+    };
+
+    int defaultSize = fontInfo().pixelSize();
+    if (defaultSize == -1) {
+        int pointSize = fontInfo().pointSize();
+        defaultSize = pointSize / (72 * screen()->physicalDotsPerInch());
+    }
+    for (const QString &previewString : previewStrings) {
+        qDebug() << previewString;
+        m_previewRuns.append(createGlyphRun(name, defaultSize, previewString));
+    }
+
+
+    m_family = m_rawFont.familyName() + ", " + m_rawFont.styleName();
 }
 
 QString CFontPreview::previewString(const QString &fontFile)
@@ -100,12 +129,17 @@ QString CFontPreview::previewString(const QString &fontFile)
 
     QString ret;
     for (const QFontDatabase::WritingSystem writingSystem : m_rawFont.supportedWritingSystems()) {
+        qDebug() << "Checking writing system" << writingSystem;
         for (const QChar c : QFontDatabase::writingSystemSample(writingSystem)) {
+            if (ret.contains(c)) {
+                continue;
+            }
             if (m_rawFont.supportsCharacter(c)) {
                 ret += c;
             }
         }
     }
+    qDebug() << ret;
     if (!ret.isEmpty()) {
         return ret;
     }
@@ -117,8 +151,8 @@ QString CFontPreview::previewString(const QString &fontFile)
         return {};
     }
 
-    FT_ULong  charcode;
-    FT_UInt   gindex;
+    FT_ULong charcode;
+    FT_UInt gindex;
     charcode = FT_Get_First_Char( face, &gindex );
     float currWidth = constBorder * 4;
     while ( gindex != 0 ) {
@@ -159,15 +193,20 @@ QList<QGlyphRun> CFontPreview::createGlyphRun(const QString &fontFile, const int
     }
 
     if (runs.count() != 1) {
-        qWarning() << "too many runs" << runs.count();
-        runs = runs.mid(0, 1);
+        qWarning() << "too many runs" << runs.count() << "assuming it did some replacements for us";
+        QList<QGlyphRun> valid;
+        for (const QGlyphRun &run : runs) {
+            if (run.rawFont() != font) {
+                continue;
+            }
+            valid.append(run);
+        }
+        return valid;
     }
     return runs;
 }
 QVector<int> CFontPreview::getAvailableSizes(const QString &filePath)
 {
-    const int constScalableSizes[] = {8, 10, 12, 24, 36, 48, 64, 72, 96, 0 };
-
     const int id = 0;
     FcBlanks *blanks = FcConfigGetBlanks(nullptr);
     int faces = 0;
@@ -187,17 +226,7 @@ QVector<int> CFontPreview::getAvailableSizes(const QString &filePath)
     FcPatternDestroy(pattern);
     QVector<int> sizes;
     if (scalable) {
-        sizes.reserve(sizeof(constScalableSizes) / sizeof(int));
-
-        for (int i = 0; constScalableSizes[i]; ++i) {
-            sizes.push_back((constScalableSizes[i] * QX11Info::appDpiX() + 36) / 72);
-
-            //if (px <= alphaSize) {
-            //    itsAlphaSizeIndex = i;
-            //}
-        }
-
-        return sizes;
+        return {8, 10, 12, 24, 36, 48, 64, 72, 96};
     }
     if (!m_library) {
         return {};
@@ -234,6 +263,7 @@ void CFontPreview::showFont()
                                itsLastWidth, itsLastHeight,
                                false, itsRange, &itsChars);
 
+    qDebug() << "chars" << itsChars.count();
     if (!itsImage.isNull()) {
         itsLastChar = CFcEngine::TChar();
         setMouseTracking(itsChars.count() > 0);
@@ -277,12 +307,41 @@ void CFontPreview::paintEvent(QPaintEvent *)
 
     paint.fillRect(rect(), palette().base());
 
-    {
-        paint.drawText(rect(), m_family);
-        qreal offset = constBorder * 2;
-        for (const QGlyphRun &run : m_glyphRuns) {
+    if (1){
+        QRect textRect = rect();
+        textRect -= QMargins(constBorder, constBorder, constBorder, constBorder);
+        QRect bounds;
+        paint.drawText(textRect, 0, m_family, &bounds);
+
+        qreal offset = bounds.height() + constBorder;
+
+        paint.drawLine(constBorder, offset, width() - constBorder, offset);
+        offset += constBorder;
+
+        for (const QGlyphRun &run : m_previewRuns) {
             // QPainter wants the baseline, so update the offset first
-            offset += run.boundingRect().height() + constStepSize * 2;
+            paint.drawGlyphRun({constBorder * 2, offset}, run);
+            offset += run.boundingRect().height() + constBorder;
+        }
+        offset += constBorder;
+
+        paint.drawLine(constBorder, offset, width() - constBorder, offset);
+        offset += constBorder;
+
+        int lastHeight = 0;
+        for (const QGlyphRun &run : m_glyphRuns) {
+            lastHeight = run.boundingRect().height();
+            offset += lastHeight;
+            paint.drawGlyphRun({constBorder * 2, offset}, run);
+
+        }
+
+        offset += constBorder + lastHeight/2;
+        paint.drawLine(constBorder, offset, width() - constBorder, offset);
+        offset += constBorder;
+
+        for (const QGlyphRun &run : m_foxRuns) {
+            offset += run.boundingRect().height();
             paint.drawGlyphRun({constBorder * 2, offset}, run);
         }
         return;
